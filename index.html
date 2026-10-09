@@ -138,48 +138,68 @@
   .loading { position: fixed; inset: 0; background: rgba(244,245,248,.7); display: none; align-items: center; justify-content: center; z-index: 40; font-weight: 500; color: var(--navy); }
   .loading.on { display: flex; }
 
-  /* ---------- 조직도 편집기 ---------- */
-  .zone .card-head { flex-wrap: wrap; }
-  .zone .card-head h3 { margin: 0; font-size: 15px; color: var(--navy); white-space: nowrap; margin-right: auto; }
-  .zone .card-head p { margin: 0; font-size: 12px; color: var(--muted); }
-  .tree { list-style: none; margin: 0; padding: 0; }
-  .tree .tree { margin-left: 22px; padding-left: 12px; border-left: 2px solid #e8ecf5; }
-  .node { display: flex; align-items: center; gap: 4px; padding: 3px 0; }
-  .node .inp { flex: 1; min-width: 0; padding: 6px 9px; }
-  .node.l1 .inp { font-weight: 700; }
-  .node .lvl { font-size: 11px; color: var(--muted); width: 34px; text-align: center; flex: none; }
-  .node .add-child { border: 0; background: #eef1f7; color: var(--navy); border-radius: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px; white-space: nowrap; }
-  .node .add-child:hover { background: #e2e7f2; }
-  .zone-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  /* ---------- 조직도 (그림에서 바로 편집) ---------- */
+  .org-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 4px 2px 12px; }
+  .org-toolbar h2 { font-size: 16px; margin: 0; color: var(--navy); }
+  .org-toolbar p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+  .org-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; user-select: none; }
+  .switch input { width: 16px; height: 16px; accent-color: var(--navy); }
+  .chart { position: relative; }
+  .chart.edit .box[data-path] { cursor: pointer; transition: box-shadow .12s; }
+  .chart.edit .box[data-path]:hover { box-shadow: 0 0 0 3px rgba(201,162,74,.45); }
+  .chart .box.sel { box-shadow: 0 0 0 3px var(--gold) !important; background: #fffaf0; }
+  .chart .box .ph { color: #aaa; font-weight: 400; }
+  .chart .box.add { border: 1.5px dashed #9aa3b5; color: #6b7385; background: #f7f8fb; cursor: pointer; font-size: 12px; }
+  .chart .box.add:hover { border-color: var(--gold); color: var(--navy); background: #fffaf0; }
+  .opanel { position: absolute; z-index: 6; display: none; width: 304px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 30px rgba(20,30,60,.18); padding: 10px; font-size: 13px; }
+  .opanel.open { display: block; }
+  .opanel .opt { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  .opanel .inp { margin-bottom: 8px; font-weight: 700; }
+  .opbtns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .opbtns button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 8px; cursor: pointer; font-size: 12.5px; }
+  .opbtns button:hover:not(:disabled) { border-color: #b9c1d1; background: #f7f8fb; }
+  .opbtns button:disabled { opacity: .35; cursor: default; }
+  .opbtns button.del { color: var(--danger); }
+  .opbtns button.done { background: var(--navy); color: #fff; border-color: var(--navy); }
 
   /* ---------- 조직도 그림 ---------- */
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-right: auto; }
   .seg button { border: 0; background: #fff; padding: 7px 14px; cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
   .chart { -webkit-print-color-adjust: exact; print-color-adjust: exact; --ln: 1.5px solid #222; font-size: 13px; color: #111; min-width: 900px; padding: 4px 6px 10px; }
-  .chart .ttl { display: table; margin: 0 auto 14px; background: #111; color: #fff; font-weight: 700; font-size: 20px; padding: 4px 34px; letter-spacing: .5px; }
+  .chart .ttl { display: table; margin: 0 auto 14px; background: #e3e3e3; color: #111; border: 1px solid #c9c9c9; font-weight: 700; font-size: 20px; padding: 4px 34px; letter-spacing: .5px; }
   .chart .box { border: 1.5px solid #222; background: #fff; padding: 3px 10px; text-align: center; white-space: nowrap; line-height: 1.25; }
-  .chart .col3 { display: grid; grid-template-columns: 1fr 2px 1fr; }
+  .chart .col3 { display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); }
   .chart .spine { border-left: 2px solid #222; }
   .chart .top { display: flex; flex-direction: column; align-items: center; }
-  .chart .top .box { min-width: 120px; }
   .chart .top .v { width: 0; height: 12px; border-left: 2px solid #222; }
-  .chart .side { display: flex; flex-direction: column; gap: 8px; padding: 10px 0; }
-  .chart .side.l { align-items: flex-end; }
-  .chart .side.r { align-items: flex-start; }
+  .chart .sides { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); row-gap: 8px; padding: 10px 0; }
+  .chart .sides::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; margin-left: -1px; border-left: 2px solid #222; }
+  .chart .sl, .chart .sr { display: flex; align-items: center; }
+  .chart .sl { grid-column: 1; justify-content: flex-end; }
+  .chart .sr { grid-column: 3; justify-content: flex-start; }
   .chart .sitem { display: flex; align-items: center; }
-  .chart .side.l .sitem::after, .chart .side.r .sitem::before { content: ''; width: 40px; border-top: var(--ln); }
-  .chart .side.l .box, .chart .side.r .box { min-width: 150px; }
-  .chart .kids { display: flex; flex-direction: column; gap: 6px; position: relative; padding-left: 24px; margin-left: 0; }
+  .chart .sl .sitem::after, .chart .sr .sitem::before { content: ''; width: var(--sline, 44px); border-top: var(--ln); }
+  .chart .sl .sitem.noline::after, .chart .sr .sitem.noline::before { border-top: 0; }
+  .chart .sitem > .box { width: 168px; }
+  .chart .kids .box { width: 150px; }
+  .chart .top .box { width: 168px; }
+  .chart .bottom ul.h > li > .box { min-width: 120px; }
+  .chart .kids { display: flex; flex-direction: column; position: relative; padding-left: 12px; }
   .chart .kids::before { content: ''; position: absolute; left: 0; top: 50%; width: 12px; border-top: var(--ln); }
-  .chart .kids::after { content: ''; position: absolute; left: 12px; top: calc(var(--first) * 1px); bottom: calc(var(--last) * 1px); border-left: var(--ln); }
-  .chart .kids > .box { position: relative; }
-  .chart .kids > .box::before { content: ''; position: absolute; left: -13px; top: 50%; width: 12px; border-top: var(--ln); }
-  .chart .kids { --first: 0; --last: 0; }
-  .chart .kids.kl { padding-left: 0; padding-right: 24px; }
+  .chart .kid { position: relative; padding: 3px 0 3px 12px; }
+  .chart .kid::before { content: ''; position: absolute; left: 0; top: 50%; width: 12px; border-top: var(--ln); }
+  .chart .kid::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; border-left: var(--ln); }
+  .chart .kid:first-child::after { top: 50%; }
+  .chart .kid:last-child::after { bottom: 50%; }
+  .chart .kid:only-child::after { display: none; }
+  .chart .kids.kl { padding-left: 0; padding-right: 12px; }
   .chart .kids.kl::before { left: auto; right: 0; }
-  .chart .kids.kl::after { left: auto; right: 12px; }
-  .chart .kids.kl > .box::before { left: auto; right: -13px; }
+  .chart .kids.kl .kid { padding: 3px 12px 3px 0; }
+  .chart .kids.kl .kid::before { left: auto; right: 0; }
+  .chart .kids.kl .kid::after { left: auto; right: 0; }
+  .chart .box.add.vbox.small { min-height: 56px; padding: 6px 2px; }
   /* 가로 막대 트리 (팀/부서/소그룹/하단) */
   .chart ul.h { display: flex; list-style: none; margin: 0; padding: 0; }
   .chart ul.h > li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 12px 3px 0; }
@@ -203,12 +223,12 @@
   .chart .teams-wrap .bar::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; border-top: var(--ln); }
   .chart .teams-wrap .half.l > ul.h > li:last-child::after, .chart .teams-wrap .half.r > ul.h > li:first-child::before { border-top: var(--ln); }
   .chart .teams-wrap .half.l > ul.h > li:last-child::after { right: -1px; width: calc(50% + 1px); }
-  .chart .sub3 { display: flex; flex-direction: column; align-items: center; }
-  .chart .hbox { white-space: normal; max-width: 200px; padding: 2px 8px; }
+  .chart .sub3 { display: flex; flex-direction: column; align-items: center; width: 0; }
+  .chart .hbox { white-space: nowrap; padding: 2px 10px; }
   .chart .lvl3.vert ul.h > li .box { min-height: 70px; }
   .chart .bottom { display: flex; justify-content: center; }
   .chart .bottom .box { padding: 3px 12px; }
-  .chart .spine-gap { height: 18px; display: grid; grid-template-columns: 1fr 2px 1fr; }
+  .chart .spine-gap { height: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); }
   .chart-wrap { overflow-x: auto; }
 
   @media (max-width: 720px) {
@@ -287,11 +307,18 @@
   </section>
 
   <section id="view-org" hidden>
-    <div class="section-head">
-      <h2>교회 조직도</h2>
-      <p>칸 이름만 입력합니다(사람 이름은 부서조직표에). 조직도 그림은 '미리보기·인쇄'에서 확인하세요.</p>
+    <div class="org-toolbar">
+      <div>
+        <h2>교회 조직도</h2>
+        <p>박스를 누르면 이름 수정·순서 이동·옆/하위 칸 추가·삭제를 할 수 있습니다. 점선 <b>+</b> 박스는 새 칸 추가입니다.</p>
+      </div>
+      <div class="org-actions">
+        <label class="switch"><input type="checkbox" id="editToggle" checked> 편집 모드</label>
+        <button class="btn" type="button" data-act="orgFromBuseo">부서조직표로 팀 채우기</button>
+        <button class="btn" type="button" id="orgPrintBtn">인쇄 / PDF</button>
+      </div>
     </div>
-    <div id="orgEditor"></div>
+    <div class="sheet"><div class="chart-wrap" id="orgEdit"></div></div>
   </section>
 
   <section id="view-preview" hidden>
@@ -615,7 +642,7 @@ function renderPreview() {
   $('orgSheet').hidden = state.pv !== 'org';
   $('pageStyle').textContent = state.pv === 'org' ? '@page { size: letter landscape; margin: 8mm; }' : '@page { size: letter portrait; margin: 12mm; }';
   document.querySelectorAll('[data-pv]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pv === state.pv)));
-  if (state.pv === 'org') { renderOrgChart(); return; }
+  if (state.pv === 'org') { renderChart($('orgChart'), false); return; }
   const gigu = state.gigu.filter((g) => g.name.trim());
   const buseo = state.buseo.filter((d) => d.dept.trim());
   if (!gigu.length && !buseo.length) { $('sheet').innerHTML = '<div class="empty">입력된 내용이 없습니다.</div>'; return; }
@@ -648,7 +675,8 @@ function renderPreview() {
 }
 
 function renderAll() {
-  renderYears(); renderGigu(); renderBuseo(); renderOrgEditor();
+  renderYears(); renderGigu(); renderBuseo();
+  if (state.view === 'org') renderOrgEdit();
   if (state.view === 'preview') renderPreview();
 }
 
@@ -719,25 +747,10 @@ document.addEventListener('click', (e) => {
       list.splice(i, 1);
       b.dataset.list === 'gigu' ? renderGigu() : renderBuseo(); break;
     }
-    case 'orgAdd': {
-      const list = getPath(b.dataset.p);
-      list.push({ name: '', children: [] });
-      renderOrgEditor(b.dataset.p + '.' + (list.length - 1) + '.name'); break;
-    }
-    case 'orgDel': {
-      const list = getPath(b.dataset.p), item = list[i];
-      if (item.children && item.children.length && !confirm(`'${item.name || '이 칸'}' 과(와) 하위 칸 ${item.children.length}개를 삭제할까요?`)) return;
-      list.splice(i, 1); renderOrgEditor(); break;
-    }
-    case 'orgMove': {
-      const list = getPath(b.dataset.p), k = i + Number(b.dataset.d);
-      if (k < 0 || k >= list.length) return;
-      [list[i], list[k]] = [list[k], list[i]]; renderOrgEditor(); break;
-    }
     case 'orgFromBuseo': {
       if (!state.buseo.length) { toast('부서 정보가 없습니다.', true); return; }
       if (state.org.teams.length && !confirm('지금 입력된 팀 목록을 부서조직표의 팀·부서로 바꿀까요?')) return;
-      state.org.teams = teamsFromBuseo(); renderOrgEditor(); toast('팀·부서를 가져왔습니다. 조직도에 맞게 고쳐 주세요.'); break;
+      state.org.teams = teamsFromBuseo(); renderOrgEdit(); toast('팀·부서를 가져왔습니다. 조직도에 맞게 고쳐 주세요.'); break;
     }
     default: return;
   }
@@ -758,103 +771,259 @@ function teamsFromBuseo() {
   return teams;
 }
 
-/* ---------- 조직도 편집기 ---------- */
-const LVL = { teams: ['팀', '부서', '소그룹'], right: ['기구', '하위'], left: ['기구', '하위'] };
-function nodeList(zone, path, list, level, depth) {
-  const lv = (LVL[zone] || [])[level - 1] || '';
-  return `<ul class="tree">${list.map((x, i) => `
-    <li>
-      <div class="node l${level}">
-        <span class="lvl">${lv}</span>
-        <input class="inp" data-k="${path}.${i}.name" value="${esc(x.name)}" placeholder="${lv || '칸'} 이름">
-        ${level < depth ? `<button class="add-child" type="button" data-act="orgAdd" data-p="${path}.${i}.children">+ ${(LVL[zone] || [])[level] || '하위'}</button>` : ''}
-        <button class="icon-btn" type="button" title="위로" data-act="orgMove" data-p="${path}" data-i="${i}" data-d="-1" ${i === 0 ? 'disabled' : ''}>▲</button>
-        <button class="icon-btn" type="button" title="아래로" data-act="orgMove" data-p="${path}" data-i="${i}" data-d="1" ${i === list.length - 1 ? 'disabled' : ''}>▼</button>
-        <button class="icon-btn del" type="button" title="삭제" data-act="orgDel" data-p="${path}" data-i="${i}">✕</button>
-      </div>
-      ${x.children && x.children.length ? nodeList(zone, `${path}.${i}.children`, x.children, level + 1, depth) : ''}
-    </li>`).join('')}</ul>`;
-}
-function renderOrgEditor(focusKey) {
-  $('orgEditor').innerHTML = ORG_ZONES.map((z) => `
-    <div class="card zone">
-      <div class="card-head"><h3>${z.title}</h3><p>${z.hint}</p></div>
-      <div class="card-body">
-        ${state.org[z.key].length ? nodeList(z.key, 'org.' + z.key, state.org[z.key], 1, z.depth) : '<div style="color:var(--muted);font-size:13px">아직 없습니다.</div>'}
-        <div class="zone-actions">
-          <button class="mini-add" type="button" data-act="orgAdd" data-p="org.${z.key}">+ ${z.key === 'teams' ? '팀' : '칸'} 추가</button>
-          ${z.key === 'teams' ? '<button class="mini-add" type="button" data-act="orgFromBuseo">↺ 부서조직표의 팀·부서로 채우기</button>' : ''}
-        </div>
-      </div>
-    </div>`).join('');
-  if (focusKey) { const el = document.querySelector(`[data-k="${focusKey}"]`); if (el) el.focus(); }
-}
-
-/* ---------- 조직도 그림 ---------- */
+/* ---------- 교회 조직도: 그림 그리기 + 그림에서 바로 편집 ---------- */
 const named = (l) => (l || []).filter((x) => x.name.trim());
 const isVert = (s) => /^[가-힣\s]{1,7}$/.test(s);
-function sideHtml(list, side) {
-  return named(list).map((x) => {
-    const kids = named(x.children);
-    const box = `<div class="box">${esc(x.name)}</div>`;
-    if (side === 'l') return `<div class="sitem">${kids.length ? `<div class="kids kl">${kids.map((k) => `<div class="box">${esc(k.name)}</div>`).join('')}</div>` : ''}${box}</div>`;
-    return `<div class="sitem">${box}${kids.length ? `<div class="kids">${kids.map((k) => `<div class="box">${esc(k.name)}</div>`).join('')}</div>` : ''}</div>`;
-  }).join('');
+const ZDEPTH = { top: 1, left: 2, right: 2, teams: 3, bottom: 1 };
+let orgSel = null;          // 선택된 칸 경로 (예: org.teams.1.children.0)
+let editMode = true;
+
+function entries(list, edit) {  // [{x, i}] — 편집 중엔 이름 없는 칸도 보이게
+  return (list || []).map((x, i) => ({ x, i })).filter((e) => edit || e.x.name.trim());
 }
-function lvl3Html(list) {
-  const kids = named(list);
-  if (!kids.length) return '';
-  const vert = kids.every((k) => isVert(k.name));
-  if (vert) return `<div class="stem"></div><ul class="h lvl3">${kids.map((k) => `<li><span class="drop"></span><div class="box vbox" style="min-height:70px">${esc(k.name)}</div></li>`).join('')}</ul>`;
-  return `<div class="stem"></div><div class="sub3" style="gap:6px">${kids.map((k) => `<div class="box hbox">${esc(k.name)}</div>`).join('')}</div>`;
+function chartBuilder(edit) {
+  const label = (x) => (x.name.trim() ? esc(x.name) : '<span class="ph">(이름)</span>');
+  const box = (path, x, cls) => `<div class="box ${cls || ''}" data-path="${path}" ${edit ? 'tabindex="0"' : ''}>${label(x)}</div>`;
+  const add = (listPath, text, cls) => (edit ? `<div class="box add ${cls || ''}" data-addto="${listPath}" tabindex="0">+ ${text}</div>` : '');
+  return { box, add, edit };
 }
-function teamHtml(t) {
-  const depts = named(t.children);
-  return `<li class="team"><span class="drop"></span><div class="box vbox">${esc(t.name)}</div>
-    ${depts.length ? `<div class="stem"></div><ul class="h">${depts.map((d) => `<li><span class="drop"></span><div class="box vbox">${esc(d.name)}</div>${lvl3Html(d.children)}</li>`).join('')}</ul>` : ''}</li>`;
-}
-function renderOrgChart() {
-  const o = state.org;
-  const top = named(o.top), teams = named(o.teams), bottom = named(o.bottom);
-  if (!top.length && !teams.length && !named(o.left).length && !named(o.right).length && !bottom.length) {
-    $('orgChart').innerHTML = '<div class="empty">조직도 내용이 없습니다. \'교회 조직도\' 탭에서 입력하세요.</div>'; return;
+
+function renderChart(el, edit) {
+  const o = state.org, B = chartBuilder(edit);
+  const top = entries(o.top, edit), left = entries(o.left, edit), right = entries(o.right, edit);
+  const teams = entries(o.teams, edit), bottom = entries(o.bottom, edit);
+  if (!edit && !top.length && !teams.length && !left.length && !right.length && !bottom.length) {
+    el.innerHTML = '<div class="empty">조직도 내용이 없습니다. \'교회 조직도\' 탭에서 입력하세요.</div>'; return;
   }
-  // 가운데 줄 양쪽 폭(부서 칸 수)이 비슷해지도록 나누기
-  const w = teams.map((t) => Math.max(1, named(t.children).length));
-  const total = w.reduce((x, y) => x + y, 0);
-  let half = 0, acc = 0, best = Infinity;
-  for (let i = 0; i <= teams.length; i++) {
-    const diff = Math.abs(total - 2 * acc);
-    if (diff < best) { best = diff; half = i; }
-    if (i < teams.length) acc += w[i];
+  let h = `<div class="chart${edit ? ' edit' : ''}"><div class="ttl">${state.year}년 시카고 언약장로교회 조직</div>`;
+
+  // 맨 위 (공동의회 → 당회)
+  h += '<div class="top">' + top.map((e, k) => `${k ? '<div class="v"></div>' : ''}${B.box('org.top.' + e.i, e.x)}`).join('');
+  if (edit) h += `${top.length ? '<div class="v" style="opacity:.35"></div>' : ''}${B.add('org.top', '맨 위 칸', '')}`;
+  h += '</div>';
+
+  // 양옆 (같은 줄끼리 좌우 맞춤)
+  const sideItem = (zone, e, side) => {
+    const p = `org.${zone}.${e.i}`;
+    const kids = entries(e.x.children, edit);
+    let kidsHtml = '';
+    if (kids.length) {
+      kidsHtml = `<div class="kids${side === 'l' ? ' kl' : ''}">${kids.map((k) => `<div class="kid">${B.box(`${p}.children.${k.i}`, k.x)}</div>`).join('')}${edit ? `<div class="kid">${B.add(p + '.children', '하위 칸', '')}</div>` : ''}</div>`;
+    }
+    return side === 'l' ? `<div class="sitem">${kidsHtml}${B.box(p, e.x)}</div>` : `<div class="sitem">${B.box(p, e.x)}${kidsHtml}</div>`;
+  };
+  const rows = Math.max(left.length, right.length) + (edit ? 1 : 0);
+  if (rows) {
+    h += '<div class="sides">';
+    for (let r = 0; r < rows; r++) {
+      const L = left[r], R = right[r];
+      h += `<div class="sl" style="grid-row:${r + 1}">${L ? sideItem('left', L, 'l') : (edit && r === left.length ? `<div class="sitem noline">${B.add('org.left', '왼쪽 칸')}</div>` : '')}</div>`;
+      h += `<div class="sr" style="grid-row:${r + 1}">${R ? sideItem('right', R, 'r') : (edit && r === right.length ? `<div class="sitem noline">${B.add('org.right', '오른쪽 칸')}</div>` : '')}</div>`;
+    }
+    h += '</div>';
   }
-  const tl = teams.slice(0, half), tr = teams.slice(half);
-  let h = `<div class="chart"><div class="ttl">${state.year}년 시카고 언약장로교회 조직</div>`;
-  h += `<div class="top">${top.map((x, i) => `${i ? '<div class="v"></div>' : ''}<div class="box">${esc(x.name)}</div>`).join('')}</div>`;
-  h += `<div class="col3"><div class="side l">${sideHtml(o.left, 'l')}</div><div class="spine"></div><div class="side r">${sideHtml(o.right, 'r')}</div></div>`;
-  if (teams.length) {
+
+  // 팀 줄 (가운데 줄 양쪽 폭이 비슷하게)
+  const lvl3 = (p, d) => {
+    const kids = entries(d.children, edit);
+    if (!kids.length) return '';
+    const vert = kids.every((k) => isVert(k.x.name || '가'));
+    if (vert) return `<div class="stem"></div><ul class="h">${kids.map((k) => `<li><span class="drop"></span>${B.box(`${p}.children.${k.i}`, k.x, 'vbox')}</li>`).join('')}${edit ? `<li><span class="drop"></span>${B.add(p + '.children', '', 'vbox small')}</li>` : ''}</ul>`;
+    return `<div class="stem"></div><div class="sub3" style="gap:6px">${kids.map((k) => B.box(`${p}.children.${k.i}`, k.x, 'hbox')).join('')}${B.add(p + '.children', '소그룹', 'hbox')}</div>`;
+  };
+  const teamLi = (e) => {
+    const p = `org.teams.${e.i}`, depts = entries(e.x.children, edit);
+    let inner = '';
+    if (depts.length) {
+      inner = `<div class="stem"></div><ul class="h">${depts.map((d) => `<li><span class="drop"></span>${B.box(`${p}.children.${d.i}`, d.x, 'vbox')}${lvl3(`${p}.children.${d.i}`, d.x)}</li>`).join('')}${edit ? `<li><span class="drop"></span>${B.add(p + '.children', '부서', 'vbox small')}</li>` : ''}</ul>`;
+    }
+    return `<li class="team"><span class="drop"></span>${B.box(p, e.x, 'vbox')}${inner}</li>`;
+  };
+  if (teams.length || edit) {
+    const w = teams.map((t) => Math.max(1, entries(t.x.children, edit).length));
+    const total = w.reduce((a, b) => a + b, 0);
+    let half = 0, acc = 0, best = Infinity;
+    for (let i = 0; i <= teams.length; i++) {
+      const diff = Math.abs(total - 2 * acc);
+      if (diff < best) { best = diff; half = i; }
+      if (i < teams.length) acc += w[i];
+    }
+    const tl = teams.slice(0, half), tr = teams.slice(half);
+    const addTeam = edit ? `<li><span class="drop"></span>${B.add('org.teams', '팀', 'vbox')}</li>` : '';
     h += `<div class="col3 teams-wrap">
-      <div class="half l">${tl.length ? `<ul class="h">${tl.map(teamHtml).join('')}</ul>` : ''}</div>
+      <div class="half l">${tl.length ? `<ul class="h">${tl.map(teamLi).join('')}</ul>` : ''}</div>
       <div class="spine bar"></div>
-      <div class="half r">${tr.length ? `<ul class="h">${tr.map(teamHtml).join('')}</ul>` : ''}</div></div>`;
+      <div class="half r">${tr.length || addTeam ? `<ul class="h">${tr.map(teamLi).join('')}${addTeam}</ul>` : ''}</div></div>`;
   }
-  if (bottom.length) {
+
+  // 아래 줄
+  if (bottom.length || edit) {
     h += `<div class="spine-gap"><div></div><div class="spine"></div><div></div></div>
-      <div class="bottom"><ul class="h">${bottom.map((x) => `<li><span class="drop"></span><div class="box">${esc(x.name)}</div></li>`).join('')}</ul></div>`;
+      <div class="bottom"><ul class="h">${bottom.map((e) => `<li><span class="drop"></span>${B.box('org.bottom.' + e.i, e.x)}</li>`).join('')}${edit ? `<li><span class="drop"></span>${B.add('org.bottom', '아래 칸')}</li>` : ''}</ul></div>`;
   }
-  $('orgChart').innerHTML = h + '</div>';
-  fixBrackets();
+  if (edit) h += `<div class="opanel" id="opanel" role="dialog" aria-label="칸 편집">
+      <div class="opt" id="opTitle"></div>
+      <input class="inp" id="opName" placeholder="칸 이름" autocomplete="off">
+      <div class="opbtns">
+        <button type="button" data-op="prev" id="opPrev">◀ 앞으로</button>
+        <button type="button" data-op="next" id="opNext">뒤로 ▶</button>
+        <button type="button" data-op="sib">+ 옆에 칸 추가</button>
+        <button type="button" data-op="child" id="opChild">+ 하위 칸 추가</button>
+        <button type="button" data-op="del" class="del">삭제</button>
+        <button type="button" data-op="close" class="done">완료</button>
+      </div></div>`;
+  el.innerHTML = h + '</div>';
+  alignChart(el);
 }
-// 오른쪽/왼쪽 하위 칸 묶음 선: 첫 칸 중앙 ~ 마지막 칸 중앙
-function fixBrackets() {
-  document.querySelectorAll('#orgChart .kids').forEach((k) => {
-    const boxes = k.querySelectorAll(':scope > .box');
-    if (!boxes.length) return;
-    const f = boxes[0], l = boxes[boxes.length - 1];
-    k.style.setProperty('--first', f.offsetTop + f.offsetHeight / 2);
-    k.style.setProperty('--last', k.clientHeight - (l.offsetTop + l.offsetHeight / 2));
-  });
+
+/* 좌우 대칭 맞춤: 팀 줄 양 끝 박스를 가운데 줄에서 같은 거리에 두고,
+   오른쪽 끝을 오른쪽 기구(예: 장년 교육부) 박스의 오른쪽 끝에 맞춘다 */
+function alignChart(el, again) {
+  const chart = el.querySelector('.chart');
+  if (!again) chart && (chart.style.minWidth = '');
+  const bar = el.querySelector('.teams-wrap .bar');
+  if (!chart || !bar || !chart.offsetWidth) return;   // 화면에 안 보일 때는 건너뜀
+  const sides = el.querySelector('.sides');
+  const ulL = el.querySelector('.teams-wrap .half.l > ul.h');
+  const ulR = el.querySelector('.teams-wrap .half.r > ul.h');
+  const lisL = ulL ? [...ulL.children] : [], lisR = ulR ? [...ulR.children] : [];
+  [...lisL, ...lisR].forEach((li) => { li.style.paddingLeft = ''; li.style.paddingRight = ''; });
+  if (sides) sides.style.removeProperty('--sline');
+  const spine = bar.getBoundingClientRect().left + bar.getBoundingClientRect().width / 2;
+  const boxOf = (li) => li && li.querySelector(':scope > .box');
+  const natR = lisR.length ? boxOf(lisR[lisR.length - 1]).getBoundingClientRect().right - spine : 0;
+  const natL = lisL.length ? spine - boxOf(lisL[0]).getBoundingClientRect().left : 0;
+  let target = 0;
+  if (sides) sides.querySelectorAll('.sr .box').forEach((b) => { target = Math.max(target, b.getBoundingClientRect().right - spine); });
+  const R = Math.max(target, natR, natL);
+  const spread = (lis, dx) => {
+    if (!lis.length || dx < 0.5) return;
+    const p = dx / (2 * lis.length - 1);
+    lis.forEach((li) => { li.style.paddingLeft = (3 + p) + 'px'; li.style.paddingRight = (3 + p) + 'px'; });
+  };
+  spread(lisR, R - natR);
+  spread(lisL, R - natL);
+  if (sides && target && R - target > 0.5) sides.style.setProperty('--sline', (44 + R - target) + 'px');
+  // 가장 멀리 나간 칸이 화면 폭을 넘으면 폭을 넓혀 다시 맞춤 (가운데 줄 유지)
+  if (!again) {
+    let need = 0;
+    chart.querySelectorAll('.box').forEach((b) => { const r = b.getBoundingClientRect(); need = Math.max(need, spine - r.left, r.right - spine); });
+    const want = Math.ceil(2 * need + 24);
+    if (want > chart.offsetWidth) { chart.style.minWidth = want + 'px'; alignChart(el, true); }
+  }
 }
+
+function fixBrackets() { /* 선은 CSS 로 그림 */ }
+
+/* ----- 편집 동작 ----- */
+const ZNAME = { top: '맨 위', left: '왼쪽 기구', right: '오른쪽 기구', teams: '팀', bottom: '아래 줄' };
+function nodeInfo(path) {
+  const parts = path.split('.');
+  const zone = parts[1], idx = Number(parts[parts.length - 1]);
+  const listPath = parts.slice(0, -1).join('.');
+  const level = parts.filter((x) => x === 'children').length + 1;
+  const kind = zone === 'teams' ? ['팀', '부서', '소그룹'][level - 1] : (level === 1 ? ZNAME[zone] : '하위 칸');
+  const vertical = (zone === 'top' || zone === 'left' || zone === 'right');
+  return { zone, idx, listPath, level, kind, vertical, list: getPath(listPath), node: getPath(path) };
+}
+function renderOrgEdit() {
+  renderChart($('orgEdit'), editMode);
+  if (editMode && orgSel) {
+    try { getPath(orgSel).name; openPanel(orgSel, false); } catch (e) { orgSel = null; }
+  }
+}
+function openPanel(path, focus = true) {
+  const chart = $('orgEdit').querySelector('.chart');
+  const boxEl = chart && chart.querySelector(`.box[data-path="${path}"]`);
+  const panel = $('opanel');
+  if (!boxEl || !panel) return;
+  orgSel = path;
+  chart.querySelectorAll('.box.sel').forEach((b) => b.classList.remove('sel'));
+  boxEl.classList.add('sel');
+  const inf = nodeInfo(path);
+  $('opTitle').textContent = inf.zone === 'teams' || inf.level > 1 ? `${ZNAME[inf.zone]} · ${inf.kind}` : ZNAME[inf.zone];
+  $('opName').value = inf.node.name;
+  $('opPrev').textContent = inf.vertical ? '▲ 위로' : '◀ 앞으로';
+  $('opNext').textContent = inf.vertical ? '▼ 아래로' : '뒤로 ▶';
+  $('opPrev').disabled = inf.idx === 0;
+  $('opNext').disabled = inf.idx >= inf.list.length - 1;
+  $('opChild').disabled = inf.level >= ZDEPTH[inf.zone];
+  $('opChild').textContent = inf.zone === 'teams' && inf.level < 3 ? `+ ${['부서', '소그룹'][inf.level - 1]} 추가` : '+ 하위 칸 추가';
+  panel.classList.add('open');
+  const c = chart.getBoundingClientRect(), r = boxEl.getBoundingClientRect();
+  let leftPx = r.left - c.left + r.width / 2 - panel.offsetWidth / 2;
+  leftPx = Math.max(4, Math.min(leftPx, chart.clientWidth - panel.offsetWidth - 4));
+  panel.style.left = leftPx + 'px';
+  panel.style.top = (r.bottom - c.top + 8) + 'px';
+  if (focus) { $('opName').focus(); $('opName').select(); }
+}
+function closePanel() {
+  orgSel = null;
+  const p = $('opanel'); if (p) p.classList.remove('open');
+  document.querySelectorAll('#orgEdit .box.sel').forEach((b) => b.classList.remove('sel'));
+}
+function newNode() { return { name: '', children: [] }; }
+function selectNew(path) { renderOrgEdit(); openPanel(path); }
+
+$('orgEdit').addEventListener('click', (e) => {
+  if (!editMode) return;
+  const addEl = e.target.closest('[data-addto]');
+  if (addEl) {
+    const lp = addEl.dataset.addto, list = getPath(lp);
+    list.push(newNode()); setDirty(true);
+    selectNew(`${lp}.${list.length - 1}`); return;
+  }
+  const boxEl = e.target.closest('.box[data-path]');
+  if (boxEl) { renderOrgEdit(); openPanel(boxEl.dataset.path); return; }
+  const op = e.target.closest('[data-op]');
+  if (op && orgSel) { doOp(op.dataset.op); return; }
+  if (!e.target.closest('.opanel')) closePanel();
+});
+$('orgEdit').addEventListener('keydown', (e) => {
+  if (e.target.id === 'opName') {
+    if (e.key === 'Enter') { e.preventDefault(); closePanel(); }
+    if (e.key === 'Escape') closePanel();
+    return;
+  }
+  if ((e.key === 'Enter' || e.key === ' ') && (e.target.matches('.box[data-path]') || e.target.matches('[data-addto]'))) { e.preventDefault(); e.target.click(); }
+});
+$('orgEdit').addEventListener('input', (e) => {
+  if (e.target.id !== 'opName' || !orgSel) return;
+  const node = getPath(orgSel);
+  node.name = e.target.value;
+  const b = $('orgEdit').querySelector(`.box[data-path="${orgSel}"]`);
+  if (b) b.innerHTML = node.name.trim() ? esc(node.name) : '<span class="ph">(이름)</span>';
+  alignChart($('orgEdit'));
+  setDirty(true);
+});
+function doOp(op) {
+  const inf = nodeInfo(orgSel);
+  switch (op) {
+    case 'close': closePanel(); return;
+    case 'prev': case 'next': {
+      const k = inf.idx + (op === 'prev' ? -1 : 1);
+      if (k < 0 || k >= inf.list.length) return;
+      [inf.list[inf.idx], inf.list[k]] = [inf.list[k], inf.list[inf.idx]];
+      setDirty(true); orgSel = `${inf.listPath}.${k}`; renderOrgEdit(); return;
+    }
+    case 'sib':
+      inf.list.splice(inf.idx + 1, 0, newNode()); setDirty(true);
+      selectNew(`${inf.listPath}.${inf.idx + 1}`); return;
+    case 'child':
+      if (inf.level >= ZDEPTH[inf.zone]) return;
+      inf.node.children.push(newNode()); setDirty(true);
+      selectNew(`${orgSel}.children.${inf.node.children.length - 1}`); return;
+    case 'del': {
+      const n = inf.node.children ? inf.node.children.length : 0;
+      if (!confirm(`'${inf.node.name || '이 칸'}'${n ? ` 과(와) 하위 칸 ${n}개` : ''}을(를) 삭제할까요?`)) return;
+      inf.list.splice(inf.idx, 1); setDirty(true); orgSel = null; renderOrgEdit(); return;
+    }
+  }
+}
+$('editToggle').addEventListener('change', (e) => { editMode = e.target.checked; closePanel(); renderOrgEdit(); });
+$('orgPrintBtn').addEventListener('click', () => { closePanel(); state.pv = 'org'; document.querySelector('.tab[data-view=preview]').click(); setTimeout(() => window.print(), 80); });
+window.addEventListener('resize', () => { if (state.view === 'org' && orgSel) openPanel(orgSel, false); });
+
 function focusLast(listId) {
   const cards = $(listId).querySelectorAll('.card');
   const last = cards[cards.length - 1];
@@ -867,6 +1036,7 @@ document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () 
   document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', String(x === t)));
   ['gigu', 'buseo', 'org', 'preview'].forEach((v) => { $('view-' + v).hidden = v !== state.view; });
   if (state.view === 'preview') renderPreview();
+  if (state.view === 'org') renderOrgEdit();
   if (state.view === 'gigu' || state.view === 'buseo') autoGrowAll($('view-' + state.view));
   window.scrollTo({ top: 0 });
 }));
@@ -881,6 +1051,7 @@ async function loadYear(year) {
     state.gigu = normGigu(d.gigu);
     state.buseo = normBuseo(d.buseo);
     state.org = normOrg(d.org);
+    orgSel = null;
     setDirty(false);
     renderAll();
   } catch (err) {
