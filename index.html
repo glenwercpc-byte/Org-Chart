@@ -334,19 +334,6 @@
   </section>
 </main>
 
-<!-- 비밀번호 -->
-<div class="modal-bg" id="pwModal">
-  <form class="modal" id="pwForm">
-    <h3>저장 비밀번호</h3>
-    <p>저장하려면 관리자 비밀번호가 필요합니다. 이 창을 닫을 때까지 기억합니다.</p>
-    <div class="grid"><input class="inp" type="password" id="pwInput" autocomplete="current-password" placeholder="비밀번호"></div>
-    <div class="err" id="pwErr"></div>
-    <div class="modal-actions">
-      <button class="btn" type="button" data-close="pwModal">취소</button>
-      <button class="btn primary" type="submit">확인</button>
-    </div>
-  </form>
-</div>
 
 <!-- 새 연도 -->
 <div class="modal-bg" id="yearModal">
@@ -440,10 +427,6 @@ const state = { year: null, years: [], gigu: [], buseo: [], org: emptyOrg(), dir
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/* ---------- 저장소(세션) ---------- */
-function ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
-function ssSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* 무시 */ } }
-let memPw = null;
 
 /* ---------- 데이터 정규화 ---------- */
 function normGigu(list) {
@@ -514,12 +497,8 @@ async function apiYears() {
   if (!API_URL) return { years: Object.keys(DEMO).map(Number).sort((a, b) => b - a) };
   return jsonp({ action: 'years' });
 }
-async function apiAuth(pw) {
-  if (!API_URL) return { ok: true };
-  return post({ action: 'auth', password: pw });
-}
-async function apiSave(pw) {
-  const payload = { action: 'save', password: pw, year: state.year, gigu: state.gigu, buseo: state.buseo, org: state.org };
+async function apiSave() {
+  const payload = { action: 'save', year: state.year, gigu: state.gigu, buseo: state.buseo, org: state.org };
   if (!API_URL) {
     DEMO[state.year] = clone({ gigu: state.gigu, buseo: state.buseo, org: state.org });
     await new Promise((r) => setTimeout(r, 300));
@@ -1108,34 +1087,20 @@ function validate() {
   Object.keys(seen).forEach((k) => { if (seen[k] > 1) errs.push(`'${k}' 부서가 두 번 있습니다. 부서 이름은 한 번씩만 써 주세요.`); });
   return errs;
 }
-function getPw() { return memPw || ssGet('orgPw'); }
-
 $('saveBtn').addEventListener('click', () => {
   const errs = validate();
   if (errs.length) { alert(errs.join('\n')); return; }
-  if (getPw()) doSave(getPw());
-  else { $('pwErr').textContent = ''; $('pwInput').value = ''; openModal('pwModal'); setTimeout(() => $('pwInput').focus(), 50); }
+  doSave();
 });
-$('pwForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const pw = $('pwInput').value;
-  if (!pw) return;
-  try { await apiAuth(pw); }
-  catch (err) { $('pwErr').textContent = err.message; return; }
-  memPw = pw; ssSet('orgPw', pw);
-  closeModal('pwModal');
-  doSave(pw);
-});
-async function doSave(pw) {
+async function doSave() {
   const btn = $('saveBtn');
   btn.disabled = true; setLoading(true, '저장 중…');
   try {
-    const r = await apiSave(pw);
+    const r = await apiSave();
     if (r.years) state.years = r.years.map(Number);
     renderYears(); setDirty(false);
     toast(`${state.year}년 조직표를 저장했습니다.`);
   } catch (err) {
-    if (/비밀번호/.test(err.message)) { memPw = null; ssSet('orgPw', ''); }
     toast(err.message, true);
   } finally { btn.disabled = false; setLoading(false); }
 }
