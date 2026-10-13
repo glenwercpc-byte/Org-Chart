@@ -261,7 +261,9 @@
   table.hdoc { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   table.hdoc td { border: 1px solid #999; padding: 4px 8px; vertical-align: top; }
   table.hdoc td.y { font-weight: 700; text-align: center; white-space: nowrap; }
-  table.hdoc td.d { white-space: nowrap; }
+  table.hdoc td.d { white-space: nowrap; text-align: center; }
+  table.hdoc tr.alt td { background: #e8f2fc; }
+  table.hdoc { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   table.hdoc td.t { white-space: pre-line; }
   table.hdoc tr { break-inside: avoid; }
 
@@ -1365,11 +1367,11 @@ function renderHistDoc() {
   $('pageStyle').textContent = '@page { size: letter portrait; margin: 14mm 12mm; }';
   if (!order.length) { $('histSheet').innerHTML = '<div class="empty">연혁이 없습니다. \'교회 연혁\' 탭에서 입력하세요.</div>'; return; }
   let html = '<h1>시카고언약장로교회 연혁</h1><table class="hdoc"><colgroup><col style="width:11%"><col style="width:17%"><col></colgroup><tbody>';
-  for (let k = 0; k < order.length;) {
+  for (let k = 0, g = 0; k < order.length; g++) {
     let m = k; while (m + 1 < order.length && order[m + 1].y === order[k].y) m++;
     for (let r = k; r <= m; r++) {
       const h = order[r].h;
-      html += '<tr>' + (r === k ? `<td class="y" rowspan="${m - k + 1}">${order[k].y ? order[k].y + '년' : ''}</td>` : '') +
+      html += (g % 2 === 0 ? '<tr class="alt">' : '<tr>') + (r === k ? `<td class="y" rowspan="${m - k + 1}">${order[k].y ? order[k].y + '년' : ''}</td>` : '') +
         `<td class="d">${esc(h.date)}</td><td class="t">${esc(h.text)}</td></tr>`;
     }
     k = m + 1;
