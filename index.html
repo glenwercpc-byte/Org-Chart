@@ -231,6 +231,40 @@
   .chart .spine-gap { height: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); }
   .chart-wrap { overflow-x: auto; }
 
+  /* ---------- 교회 연혁 ---------- */
+  .hist-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .hist-tools .inp { width: auto; }
+  .hist-tools #histQ { flex: 1; min-width: 180px; max-width: 320px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .chip { border: 1px solid var(--line); background: #fff; border-radius: 99px; padding: 4px 11px; font-size: 12.5px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .hist-info { font-size: 12.5px; color: var(--muted); margin: 0 2px 8px; }
+  .hyear { background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+  .hy { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #fafbfd; }
+  .hy .hyl { font-weight: 700; color: var(--navy); font-size: 15px; }
+  .hy .cnt { font-size: 12px; color: var(--muted); margin-right: auto; }
+  .hrow { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 8px 14px; border-top: 1px solid #eef0f4; cursor: pointer; }
+  .hrow:hover { background: #fffaf0; }
+  .hrow:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .hrow .hd { color: var(--muted); font-size: 13.5px; }
+  .hrow .ht { white-space: pre-line; }
+  .hrow mark { background: #fde9a8; padding: 0 1px; border-radius: 2px; }
+  .hrow.editing { grid-template-columns: 1fr; cursor: default; background: #fffaf0; box-shadow: inset 3px 0 0 var(--gold); }
+  .hgrid { display: grid; grid-template-columns: 110px 1fr; gap: 8px; margin-bottom: 8px; }
+  .hbtns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .hbtns button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+  .hbtns button:disabled { opacity: .35; cursor: default; }
+  .hbtns .del { color: var(--danger); margin-left: auto; }
+  .hbtns .done { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .hist-empty { background: #fff; border: 1px dashed #c9cfdb; border-radius: 10px; padding: 26px 16px; text-align: center; color: var(--muted); }
+  .hist-empty .btn { margin-top: 10px; }
+  table.hdoc { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.hdoc td { border: 1px solid #999; padding: 4px 8px; vertical-align: top; }
+  table.hdoc td.y { font-weight: 700; text-align: center; white-space: nowrap; }
+  table.hdoc td.d { white-space: nowrap; }
+  table.hdoc td.t { white-space: pre-line; }
+  table.hdoc tr { break-inside: avoid; }
+
   @media (max-width: 720px) {
     body { font-size: 14px; }
     .topbar-inner { padding: 8px 12px; }
@@ -245,6 +279,8 @@
     .row > :nth-child(2), .row.grp > :nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
     .row > :nth-child(3) { grid-column: 1 / -1; grid-row: 3; }
     .row > .icon-btn:last-child { grid-column: 2; grid-row: 1; }
+    .hrow { grid-template-columns: 1fr; gap: 2px; }
+    .hgrid { grid-template-columns: 90px 1fr; }
     .row-labels { display: none; }
     .row, .row.grp { padding-bottom: 8px; border-bottom: 1px solid #f0f1f4; }
     .sheet { padding: 16px 10px; }
@@ -253,7 +289,7 @@
   @media print {
 
     body { background: #fff; padding: 0; }
-    .topbar, .preview-tools, .banner, #view-gigu, #view-buseo, #view-org, .toast { display: none !important; }
+    .topbar, .preview-tools, .banner, #view-gigu, #view-buseo, #view-org, #view-hist, .toast { display: none !important; }
     .chart { min-width: 0; zoom: .93; break-inside: avoid; }
     main { padding: 0; max-width: none; }
     #view-preview { display: block !important; }
@@ -281,6 +317,7 @@
     <button class="tab" role="tab" data-view="gigu" aria-selected="true">기구·위원회</button>
     <button class="tab" role="tab" data-view="buseo" aria-selected="false">팀·부서</button>
     <button class="tab" role="tab" data-view="org" aria-selected="false">교회 조직도</button>
+    <button class="tab" role="tab" data-view="hist" aria-selected="false">교회 연혁</button>
     <button class="tab" role="tab" data-view="preview" aria-selected="false">미리보기·인쇄</button>
   </nav>
 </header>
@@ -321,16 +358,37 @@
     <div class="sheet"><div class="chart-wrap" id="orgEdit"></div></div>
   </section>
 
+  <section id="view-hist" hidden>
+    <div class="org-toolbar">
+      <div>
+        <h2>교회 연혁</h2>
+        <p>항목을 누르면 수정할 수 있습니다. 바꾼 내용은 위쪽 [저장] 버튼으로 저장합니다.</p>
+      </div>
+      <div class="org-actions">
+        <button class="btn" type="button" data-ha="addNew">+ 새 항목</button>
+      </div>
+    </div>
+    <div class="hist-tools">
+      <input class="inp" id="histQ" type="search" placeholder="검색 (예: 부임, 선교, 성전)">
+      <label class="switch"><input type="checkbox" id="histDesc"> 최신순</label>
+    </div>
+    <div class="chips" id="histChips"></div>
+    <div class="hist-info" id="histInfo"></div>
+    <div id="histList"></div>
+  </section>
+
   <section id="view-preview" hidden>
     <div class="preview-tools">
       <div class="seg" role="group" aria-label="미리보기 종류">
         <button type="button" data-pv="table" aria-pressed="true">부서조직표</button>
         <button type="button" data-pv="org" aria-pressed="false">교회 조직도</button>
+        <button type="button" data-pv="hist" aria-pressed="false">교회 연혁</button>
       </div>
       <button class="btn" type="button" onclick="window.print()">인쇄 / PDF 저장</button>
     </div>
     <div class="sheet" id="sheet"></div>
     <div class="sheet print-org" id="orgSheet" hidden><div class="chart-wrap" id="orgChart"></div></div>
+    <div class="sheet" id="histSheet" hidden></div>
   </section>
 </main>
 
@@ -423,7 +481,7 @@ const ORG_ZONES = [
 ];
 const emptyOrg = () => ({ top: [], left: [], right: [], teams: [], bottom: [] });
 
-const state = { year: null, years: [], gigu: [], buseo: [], org: emptyOrg(), dirty: false, view: 'gigu', pv: 'table' };
+const state = { year: null, years: [], gigu: [], buseo: [], org: emptyOrg(), dirty: false, view: 'gigu', pv: 'table', hist: [], histDirty: false, histLoaded: false };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -514,11 +572,13 @@ function toast(msg, isErr) {
   const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (isErr ? ' error' : '');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.className = 'toast'), 2600);
 }
-function setDirty(v) {
-  state.dirty = v;
+function setDirty(v) { state.dirty = v; updateStatus(); }
+function setHistDirty(v) { state.histDirty = v; updateStatus(); }
+function updateStatus() {
+  const d = state.dirty || state.histDirty;
   const s = $('status');
-  s.textContent = v ? '● 저장 안 됨' : '';
-  s.classList.toggle('dirty', v);
+  s.textContent = d ? '● 저장 안 됨' : '';
+  s.classList.toggle('dirty', d);
 }
 function showBanner() {
   const b = $('banner');
@@ -619,9 +679,11 @@ function memberText(d) {
 function renderPreview() {
   $('sheet').hidden = state.pv !== 'table';
   $('orgSheet').hidden = state.pv !== 'org';
+  $('histSheet').hidden = state.pv !== 'hist';
   $('pageStyle').textContent = state.pv === 'org' ? '@page { size: letter landscape; margin: 8mm; }' : '@page { size: letter portrait; margin: 12mm; }';
   document.querySelectorAll('[data-pv]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pv === state.pv)));
   if (state.pv === 'org') { renderChart($('orgChart'), false); return; }
+  if (state.pv === 'hist') { renderHistDoc(); return; }
   const gigu = state.gigu.filter((g) => g.name.trim());
   const buseo = state.buseo.filter((d) => d.dept.trim());
   if (!gigu.length && !buseo.length) { $('sheet').innerHTML = '<div class="empty">입력된 내용이 없습니다.</div>'; return; }
@@ -1013,7 +1075,8 @@ function focusLast(listId) {
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
   state.view = t.dataset.view;
   document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', String(x === t)));
-  ['gigu', 'buseo', 'org', 'preview'].forEach((v) => { $('view-' + v).hidden = v !== state.view; });
+  ['gigu', 'buseo', 'org', 'hist', 'preview'].forEach((v) => { $('view-' + v).hidden = v !== state.view; });
+  if (state.view === 'hist') renderHist();
   if (state.view === 'preview') renderPreview();
   if (state.view === 'org') renderOrgEdit();
   if (state.view === 'gigu' || state.view === 'buseo') autoGrowAll($('view-' + state.view));
@@ -1096,16 +1159,223 @@ async function doSave() {
   const btn = $('saveBtn');
   btn.disabled = true; setLoading(true, '저장 중…');
   try {
-    const r = await apiSave();
-    if (r.years) state.years = r.years.map(Number);
-    renderYears(); setDirty(false);
-    toast(`${state.year}년 조직표를 저장했습니다.`);
+    const msgs = [];
+    if (state.dirty || !state.histDirty) {
+      const r = await apiSave();
+      if (r.years) state.years = r.years.map(Number);
+      renderYears(); setDirty(false);
+      msgs.push(`${state.year}년 조직표`);
+    }
+    if (state.histDirty) {
+      closeHistEdit(false);
+      const r = await apiSaveHistory();
+      setHistDirty(false);
+      msgs.push(`교회 연혁 ${r.count != null ? r.count : state.hist.length}건`);
+      if (state.view === 'hist') renderHist();
+    }
+    toast(msgs.join(', ') + '을(를) 저장했습니다.');
   } catch (err) {
     toast(err.message, true);
   } finally { btn.disabled = false; setLoading(false); }
 }
 
-window.addEventListener('beforeunload', (e) => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload', (e) => { if (state.dirty || state.histDirty) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- 교회 연혁 ---------- */
+// 첨부 자료 '시카고언약장로교회 연혁 (10-24-2024)' 에서 옮긴 초기 자료: [연도, 날짜, 내용]
+const HIST_SEED = [[1976,"11월28일","7622 Waukegan 에서 첫 예배를 드림"],[1976,"12월 4일","Niles Community Church를 예배장소로 정함 (7401 Oakton, Niles)"],[1977,"1월 9일","교회 명칭을 나일스한인장로교회라 함"],[1977,"3월 6일","나일스 한인 장로 교회'로 창립예배"],[1978,"9월","시카고 노회 가입예배"],[1981,"3월","임시공동의회에서 새 성전 건축 대지결정\n(1424 Greenwood)"],[1981,"11월15일","새성전 기공예배"],[1982,"5월","새 성전 헌당 예배 교회명을 \"가나안장로교회\"라 변칭"],[1982,"7월","제1회 여름하기학교 개강 (4주)"],[1982,"10월","제1회 선교 바자회, 가나안 어린이 음악,"],[1984,"1월","교회묘지 구입 (Ridgewood Cemetary)"],[1985,"8월","제1회 청소년 부흥회 실시"],[1986,"8월","교육관 신축 기공식"],[1987,"4월 5일","교육관 입당"],[1987,"4월26일","창립 10 주년 기념. 교육관 헌당, 기념성회 (강사:김장환 목사)"],[1988,"2월","주일 2부 예배와 3부 영어예배 실시"],[1989,"7월","새성전 공사 착공, 제2부 영어부 시작"],[1989,"11월","제1회 가나안 장학금 전달식"],[1990,"4월","새성전 입당및 부흥회 (강사:김진홍 목사)"],[1990,"10월","새성전 헌당및 부흥회 (강사:박조준 목사)"],[1990,"11월","제1회 가나안 장학금 전달식"],[1991,"4월","제2 파킹랏 대지 구입"],[1992,"3월","가나안 토요 한국학교 개강"],[1993,"3월","Youth Center 건립위원회 조직"],[1993,"12월","가나안 기도원 구입 (Wisconsin)"],[1994,"3월","기도원 개원"],[1994,"4월","Soup Kitchen 시작, 가나안소망대학 개교"],[1994,"6월","도미니카 단기 선교"],[1996,"1월","중국 요녕성 서교교회 건축헌당"],[1996,"3월","반호목사 중국 선교사로 파송"],[1996,"4월","가나안 제2성전 교육관 구입 (1240 Greenwood)"],[1996,"11월","창립 20주년 기념예배"],[1997,"5월","정성일 전도사 중국 선교사 파송"],[1997,"10월","Hallelujah Night 시작"],[1997,"11월","북한 황해도 사리원 국수공장 설립"],[1997,"12월","가나안 지상사 학교 설립"],[1998,"9월","가나안 예술학교(음악. 미술) 설립"],[1998,"11월","청년회 READY 행사 시작"],[1999,"3월","열린예배 시작"],[1999,"6월","최광규 선교사. 도미니카 파송"],[1999,"9월","이슬비 전도반 개교"],[1999,"12월","남계영 선교사. 볼리비아 파송"],[2000,"1월","영상예배 실시"],[2000,"9월23일","볼리비아 단기선교사 31명 파송 (의료,건축,미용,VBS)"],[2001,"6월","영성훈련 여자 1기"],[2001,"9월","거니 가나안 교회 개척"],[2001,"9월","볼리비아 가나안 교회 헌당"],[2001,"11월","영성훈련 남자 1기"],[2001,"11월","멕시코 초쵸 가나안 교회 헌당"],[2001,"12월","가나안 제2성전 부지 확보"],[2002,"1월","가나안 Web (www.canaan.org)"],[2002,"1월","가나안 Cell Group 구성"],[2002,"9월","볼리비아 단기 선교 및 수도공사"],[2002,"12월","Joy Lee 선교사 중국 현지 파송"],[2003,"9월","Walk for Mission 제 1회 행사"],[2004,"6월","볼리비아 가나안 병원 헌당"],[2004,"8월","새 주차장 완공"],[2004,"10월","볼리비아 가나안 학교 신축"],[2004,"10월","제8차 아론 한나 유카탄 선교"],[2005,"1월","제 2대 목회자 청빙위원회 구성"],[2005,"6월","볼리비아 가나안 기독교학교 건립헌당"],[2006,"2월","Vision Center 착공식"],[2007,"2월","Vision Center 완공"],[2007,"5월6일","김성웅 목사(임시 목사로 시무)"],[2007,"7월 21일","성경공부를 위한 소그룹 조직 완료 (총 22 샘터) 및 인도자 첫 모임"],[2009,"7월 26일","김성웅 목사 이임예배"],[2009,"11월","전교우 수양회 (The Cove of Lake Geneva) – 21~22일"],[2010,"1월 3일","Gina 전도사 (유치, 유년부) 담당 부임"],[2010,"4월 18일","David Papendorf 전도사 (중등부) 담당 부임"],[2010,"8월","멕시코 단기 선교사 파송(총30명)- 7 ~14일"],[2010,"9월","전교인 수양회 (Eaglewood Resort) - 18~19일"],[2010,"11월 21일","시카고 언약 장로교회로 PCUSA에 의해 창립\n(장소: 참길 장로교회)"],[2010,"11월 21일","장로 선출 및 안수 / 임직식을 거쳐 시카고 언약 장로교회 조직을 완료"],[2010,"12월 26일","Gina 전도사 (유치, 유년부) 담당 사임"],[2011,"1월 2일","Chris Kim 전도사 (고등부) 담당 부임"],[2011,"2월6일","Thomas Yang 전도사(유치, 유년부) 담당 부임"],[2011,"3월 8일","교육관 및 Vision Center 로 돌아옮"],[2011,"3월 9일","Vision Center 에서 수요예배로 첫 예배를 드림"],[2011,"3월 25일","첫 금요 기도회로 드림"],[2011,"3월 25일","유년 주일학교 성경 공부 다시 시작"],[2011,"3월 30일","빌립 훈련 성경공부 시작"],[2011,"5월 22일","David Papendorf 전도사 (중등부)담당 사임"],[2011,"6월 5일","주일 예배를 1부 와 2부로 나누어서 드리기 시작"],[2011,"8월 6일","멕시코 단기 선교사 파송(총 39명) - 6~14일"],[2011,"9월 10일","언약 지상사 특목학교 개교"],[2011,"9월 25일","공천위원 선출을 위한 공동의회 소집"],[2011,"10월 16일","전교인 단풍길 걷기 실시 (Captain Daniel Forest Reserve)"],[2011,"11월 10일","교인을 위한 Computer Class 를 개강"],[2011,"11월 13일","전 교인 가을 수련회 실시"],[2011,"11월 20일","창립 1주년 기념예배 및 권사 취임 및 집사 안수식"],[2011,"12월 11일","구약성경 통독 대회 시작"],[2011,"12월 25일","제직 은퇴식"],[2012,"1월","백용석 목사 AC 승인으로 시무시작(Transitional Pastor)"],[2012,"6월 10일","전교인 야외 예배 및 걷기 실시 (Daniel Forest Reserve)"],[2012,"8월 4일","멕시코 단기 선교사 파송 (총 29명, 유카탄 Celestun 교회와 Izamal 교회 – VBS & 건축 사역) - 4~11일"],[2012,"8월26일","Thomas Yang 전도사(유치, 유년부) 담당 사임"],[2012,"11월4일","본당 입당 및 1,2,3부로 예배 를 드림"],[2013,"1월6일","김현일 목사(청년, 장년담당)와 하나영 전도사(주일학교 담당) 부임"],[2013,"3월 10일","제 1회 지구별 찬양 경연대회"],[2013,"6월 23일","EM 예배 시작"],[2013,"6월 29일","멕시코 단기 선교사 파송 (총 29명, 유카탄 Celestun 교회와 Kantunil지역– VBS & 건축팀, 의료팀 사역) – 29~7월 6일"],[2013,"8월 11일","교회 Symbol Mark 제정 및 사용"],[2013,"9월 6일 ~ 8일","전병금 목사(서울 강남교회 담임목사)\n부흥회"],[2013,"11월 10일","담임 목사 청빙을 위한 청빙위원회 구성 (공동의회)"],[2014,"1월5일","2부 예배를 찬양예배로 드림\n(찬양과 말씀중심- 본당 소예배실)"],[2014,"3월 9일","제 2회 지구별 찬양제"],[2014,"3월 30일","1대 담임목사 청빙을 위한 임시공동의회\n(백용석 목사 청빙 결정)"],[2014,"6월 1일","담임목사 위임 예배 및 위임식(1대 백용석 목사)"],[2014,"6월 24일","중보기도팀 운영 실시"],[2014,"7월 7일","온두라스 단기 선교 VBS팀 파송(7. 7~19, 노회 연합)"],[2014,"7월 18일","치유와 회복을 위한 특별집회\n(7.18~20, 강사: 정태기 목사)"],[2014,"8월 2일","멕시코 단기 선교 건축팀 파송(Izamal교회, 8. 2~9)"],[2014,"9월 1일","어린이부 주일 한글교실 개강"],[2014,"9월 7일","언약 온 세대 예배 시작(3부 예배)"],[2014,"9월 28일","하나영 전도사 (한인교육문화 마당집 사회 선교활동)으로 사임"],[2014,"10월 ~12월","이현주 전도사 사역 (유년부 Interim)"],[2014,"11월 2일","3부 예배 영어 통역 시작"],[2014,"11월 30일","권사 취임 및 집사 안수식"],[2014,"12월 28일","제직 은퇴식"],[2015,"2월 28일","음악 아카데미 임시로 시작"],[2015,"3월 15일","전 교인 대상 주일 성경 공부 시작"],[2015,"7월4일 ~11일","니카라과 단기 선교팀 파송(건축팀 4명)"],[2015,"7월 5일","Andy Gehron전도사 (중등부 담당) 부임"],[2015,"7월 15일","제 1회 시카고 언약 장학금 수여식"],[2015,"8월 23일","Lee-Kim 전도사 (유년부) 부임"],[2015,"8월 29일","음악 아카데미 개강 예배"],[2016,"2월 2일","커피브레이크 성경공부 시작"],[2016,"2월 7일","김요한 EM pastor 부임"],[2016,"2월 21일","백용석 목사 사임 후 서울 강남 교회로 부임"],[2016,"2월 22일","이종형 임시 당회장 부임(전 한미장로교회 담임목사)"],[2016,"2월 28일","Youth Orchestra 창단"],[2016,"3월 15일","Lee-Kim 전도사 (유년부) 사임"],[2016,"5월 12일","어르신 봄맞이 야유회(Lake Geneva)"],[2016,"6월8일 ~ 15일","니카라과 단기 선교팀 파송"],[2016,"6월 19일","제 2회 시카고 언약 장학금 수여식"],[2016,"6월 26일","중등부 전도사 Andy Gehron 사임"],[2016,"7월 3일","홍해만 전도사 (중등부 담당) 부임"],[2016,"7월 11일","기도원 매각(Kenosha, WI) 소재"],[2016,"8월 8일 ~ 12일","어린이 여름 성경학교(VBS)"],[2016,"9월 3일","시카고 언약 음악 아카데미 개강"],[2016,"9월 29일 ~10월 1일","PCUSA 남선교회 주관\n2016 Vision Conference"],[2016,"10월 23일","차광선 제 2대 담임 목사 청빙결정"],[2016,"10월 30일","이봉헌 목사(유치, 유년부) 부임"],[2016,"11월 27일","고등부 Chris Kim 전도사 사임"],[2016,"12월 25일","김현일 부목사 사임"],[2016,"12월 26일 ~ 29일","중. 고등부 겨울 수양회\n(Cedar Lake Ministries)"],[2017,"2월 19일","김주현, 송영민 부목사 부임"],[2017,"3월 19일","제 2대 담임목사(차광선) 위임 감사예배 및 위임식"],[2017,"3월24일 ~26일","중 서부 한미노회 주관 연합부흥회\n(강사: 김동호 목사)"],[2017,"5월21일","정세영 EM 교육 전임 목사 부임"],[2017,"5월 28일 ~29일","찬양위원회 전체 수련회\n(Green Lake Conference Center, WI)"],[2017,"6월11일","전 교인 야외예배\n(Captain Daniel Forest Preserve)"],[2017,"6월16일 ~18일","중. 고등부 여름수련회\n(Cedar Lake Ministries, IN)"],[2017,"7월 5일","여름 신앙 특강"],[2017,"7월 28일 ~ 8월 4일","니카라과 해외단기선교 파송"],[2017,"8월 7일 ~ 11일","어린이 여름 성경학교 (VBS)"],[2017,"9월 11일 ~ 23일","본당 강단 변경 공사"],[2017,"10월 3일 ~12월16일","시카고언약장로교회 성경대학(CBS)"],[2017,"11월 12일","강재숙 유치부 전도사 부임"],[2017,"11월 26일","시카고언약교회 장학금 수여식"],[2017,"12월 26일 ~ 29일","중.고등부 겨울 수련회\n(Cedar Lake Ministries, IN)"],[2018,"4월 ~ 7월","선교 훈련학교(매 주 1회)"],[2018,"5월 20일","시카고언약교회 장학금 수여 (7명)"],[2018,"6월8일 ~6월 10일","중. 고등부 여름수련회\n(Covenant Harbor, WI)"],[2018,"6월 17일","선교 바자회"],[2018,"6월 22일 ~6월 24일","중. 서부 한미 노회 주관\n찬양예배 및 세미나 (강사: 김명환 목사)"],[2018,"7월 3일 ~7월 10일","멕시코 단기선교 (건축팀 3명)"],[2018,"7월 15일","정세영 EM교육(중,고등부) 목사 사임"],[2018,"7월 29일","송영민 목사(KM교육 담당) 사임"],[2018,"8월 6일 ~8월 10일","어린이 여름 성경학교(VBS)"],[2018,"8월 26일","2018 할렐루야 대성회(주최:교회협의회)\n강사: 이용규 선교사"],[2018,"9월 2일","박재영(James ) 중.고등부 전도사 부임"],[2018,"10월28일","이봉원 목사(유년부 담당) 사임"],[2018,"12월 26일 ~12월 29일","중. 고등 부 겨울 수련회\n(Cedar Lake Ministries, IN)"],[2018,"12월 30일","김주현 목사 사임"],[2019,"1월 14일","차광선 담임목사 사임"],[2019,"2월 4일 ~ 2일 11일","과테말라 단기선교 (건축팀 5명)"],[2019,"2월 10일","임시 당회장 이만석 목사 시무 시작"],[2019,"3월 31일","김요한 EM Pastor 사임"],[2019,"5월 5일","시카고언약교회 장학금 수여식 (5명)"],[2019,"5월 19일","3대 담임목사 청빙위원회 구성"],[2019,"6월 11일 ~ 6월14일","중. 고등부 여름수련회\n(Cedar Lake Ministries, IN)"],[2019,"6월 30일","공천위원 선출"],[2019,"7월 19일","공천을 위한 정관 수정"],[2019,"8월 4일","EM Pastor (Richard Kim) 부임"],[2019,"10월 13일","유승원 3대 담임 목사 청빙결정"],[2019,"12월 26일 ~ 12월 29일","중. 고등 부 겨울 수련회\n(Cedar Lake Ministries, IN)"],[2020,"1월 3일","임시 당회장 (이만석 목사) 시무 종료"],[2020,"1월 5일","유승원 담임목사 시무 시작"],[2020,"3월 4일 ~ 3월 10일","과테말라 단기선교 (건축팀 4명)"],[2020,"3월 8일","제 3대 유승원 담임목사 위임\n감사 예배 및 위임식"],[2020,"3월 15일","COVID 19 Pandemic 상황으로 비상시국에\n대처하는 시카고언약장로교회 방침 발표"],[2020,"3월 22일","COVID 19상황으로 교회에 모이지 못하는 관계로 가정에서 주일 예배 드리도록 주보 특별판 (3/22~6/28) 발행하기\n시작함"],[2020,"3월 29일","시카고언약장로교회 장학금 수여 전달(4명)"],[2020,"4월 12일 ~ 6월 28일","부활절부터 주일 영상예배 시작\nYouTube(CCPC Media), 교회 website통해"],[2020,"7월 5일","주일 교회 현장 예배 재개(1부, 3부) 및 온라인 예배 실황\n중계(3부 : 오전 11시 예배) 시작"],[2020,"7월7일","새벽기도회(화 ~ 토) 재개"],[2020,"10월 25일","온라인 ZOOM Meeting을 통하여 청지기\n교육 및 샘터 모임 시작"],[2020,"11월 3일","온라인 ZOOM을 통해 새벽기도회 (화 ~토) 실황송출(음성만)"],[2020,"11월 11일","온라인 ZOOM을 통한 성경공부 시작"],[2021,"2월 23일","온라인 ZOOM 을 통한 샘터 모임 심방 시작"],[2021,"3월 14일","교회 농장 (Youth Chapel 옆) OPEN알림"],[2021,"4월 29일","정관 수정(시무장로 공천자격 수정 집사, 또는 권사로 3년\n이상 사역한 자로 수정함)"],[2021,"8월 15일","공천위원선출(COVID -19관계로 당회에서 공천위원 후보를\n선임하여 공동의회에서 선출함)"],[2021,"10월 17일","제직선출 공동의회"],[2021,"11월 21일","창립 11주년 기념예배 및 장로, 권사 취임 및 집사 안수식"],[2021,"12월 26일","제직 은퇴식"],[2022,"1월 2일","김대희 전도사(1부 설교통역 시작) / 이봉헌 목사 사역"],[2022,"2월 13일","1부(오전9:00), 3부(오전 11:00) 예배 순서가 개편됨"],[2022,"3월 20일","시카고언약장로교회 미래 비전 특별위원회구성"],[2022,"5월 8일","COVID -19관계로 그동안 중단했던 예배 후 친교 (다과)시작"],[2022,"6월 5일","COVID -19관계로 문을 닫았던 교회 도서실 다시 open"],[2022,"6월 12일","임시공동의회 (안건1: Corner Parking lot 매각 승인 요청)\n안건2: 교회의 미래와 사역과 재정 건정성을 확보하기 위해\n본당 또는 비전센터 재산(부동산) 매각 승인 요청"],[2022,"7월 16일","‘사랑의 나눔’ 사역 시작(매달 3째주 토요일)"],[2022,"7월 24일","공천위원 선출 공동의회"],[2022,"7월 25일 ~ 7월28일","중. 고등부 여름수련회\n(Illinois Wesleyan University)"],[2022,"7월 29일 ~ 7월31일","유, 초등부 ‘어린이 여름 제자 캠프’\n비전센터에서"],[2022,"8월 7일","제직 부서장 회의 다시 개최"],[2022,"8월 19일","COVID -19관계로 그동안 중단했던 금요기도회 재개"],[2022,"8월 21일","임시공동의회(안건: Vision Center Property(Youth Chapel,\nHouse, Farm 포함) Lease 승인 요청"],[2022,"9월 18일","2023년 제직 선출 공동의회"],[2022,"10월 13일 ~ 10월 16일","Vision Center Moving (비전센터안에 있던 목회실, 교회사무실\n본당으로 이전 16(주일)부터는 모든 사역자들은본당에서 근무"],[2022,"11월 18일 ~11월 20일","창립 12 주년 기념 부흥회(강사: 허봉기 목사)\n주제: 다시 한번 시작하게 하소서"],[2022,"11월 20일","창립 12주년 기념예배 및 장로, 권사 취임 및 집사 임직식"],[2022,"11월 27일","Vision Center 를 Hope Community Church에게 임대/ 매매 계약"],[2022,"12월 25일","제직 은퇴식"],[2023,"1월 1일","첫 주일부터 오전 10시 예배 한번만 드림\n예배 후 점심식사 제공"],[2023,"1월 1일","사역자 위촉 :\n(협동목사-곽평화목사, 예배 사역자- 김용민 전도사)"],[2023,"1월 11일","정관 수정(동사 목사건)"],[2023,"1월 22일","정기공동의회 중 2차 안건 동사 목사 청빙위원선출"],[2023,"2월19일","선교회 다시 조직"],[2023,"4월 2일","교회 학교 아이들의 안전과 본당 건물 안전을 위해 CCTV 설치"],[2023,"6월 4일","중.고등부 James Park 전도사 사임"],[2023,"6월 18일","김윤민 동사 목사 청빙결정"],[2023,"7월 15일 ~ 7월22일","과테말라 단기선교(3명)"],[2023,"7월 23일","공천위원회 선출"],[2023,"8월 23일 ~ 8월30일","멕시코 단기 의료 선교(8명)"],[2023,"8월 27일","이봉헌 목사 사임"],[2023,"9월 1일","김윤민 동사목사 시무 시작"],[2023,"9월 1일","영상 사역자-노동기 전도사, CCYG 사역자- Shawn Murphy"],[2023,"9월 17일","유승원 담임목사 은퇴식"],[2023,"10월 15일","제 4대 김윤민 담임목사 위임 감사 예배 및 위임식"],[2023,"11월 19일","창립 13주년 기념 감사 예배 및 장로, 집사 임직식"],[2024,"1월 7일","주일 예배를 1부(오전 8:30)와 2부(오전 10:00)로\n대 예배실에서 드림"],[2024,"1월 14일","송준서 전도사 (유. 조등부 담당) 임시 담당"],[2024,"","EM 예배 다시 드림(오전 11:45, 소예배실)\nEM 사역- Pastor Bo Yong Song, Pastor Seung Han Lee"],[2024,"4월 7일","이신민 부목사 부임"],[2024,"7월 10일 ~7월 17일","멕시코 단기 선교(8명)"],[2024,"8월 11일","나승은 목사 부임(유, 초등부 담당)"],[2024,"9월 15일","Sean Kim 목사 부임(중.고등부 담당)"]].map(([year, date, text]) => ({ year, date, text }));
+let DEMO_HIST = clone(HIST_SEED);
+let histEdit = -1, histQ = '', histDec = 'all', histDescOrder = false;
+
+async function apiHistory() {
+  if (!API_URL) return { history: clone(DEMO_HIST) };
+  return jsonp({ action: 'history' });
+}
+async function apiSaveHistory() {
+  if (!API_URL) { DEMO_HIST = clone(state.hist); await new Promise((r) => setTimeout(r, 200)); return { ok: true, count: state.hist.length }; }
+  return post({ action: 'saveHistory', history: state.hist });
+}
+function normHist(list) {
+  return (list || []).map((h) => ({ year: Number(h.year) || '', date: String(h.date || ''), text: String(h.text || '') }));
+}
+function sortHist() {
+  const idx = state.hist.map((h, i) => ({ h, i, y: Number(h.year) || 0 }));
+  idx.sort((a, b) => a.y - b.y || a.i - b.i);
+  return idx;
+}
+async function loadHistory() {
+  try {
+    const r = await apiHistory();
+    state.hist = normHist(r.history);
+    state.histLoaded = true;
+    state.histError = '';
+  } catch (err) {
+    state.histError = err.message;
+  }
+  histEdit = -1;
+  setHistDirty(false);
+  if (state.view === 'hist') renderHist();
+}
+function hl(s) {
+  const t = esc(s);
+  if (!histQ) return t;
+  const q = esc(histQ).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return t.replace(new RegExp(q, 'gi'), (m) => `<mark>${m}</mark>`);
+}
+function histMatches(h) {
+  if (histDec !== 'all' && Math.floor((Number(h.year) || 0) / 10) * 10 !== Number(histDec)) return false;
+  if (!histQ) return true;
+  const q = histQ.toLowerCase();
+  return (String(h.year) + ' ' + h.date + ' ' + h.text).toLowerCase().includes(q);
+}
+function renderHist() {
+  // 연대 칩
+  const decs = [...new Set(state.hist.map((h) => Math.floor((Number(h.year) || 0) / 10) * 10).filter(Boolean))].sort();
+  $('histChips').innerHTML = state.hist.length ? [`<button class="chip" type="button" data-dec="all" aria-pressed="${histDec === 'all'}">전체</button>`]
+    .concat(decs.map((d) => `<button class="chip" type="button" data-dec="${d}" aria-pressed="${String(histDec) === String(d)}">${d}년대</button>`)).join('') : '';
+
+  if (!state.hist.length) {
+    $('histInfo').textContent = '';
+    $('histList').innerHTML = state.histError
+      ? `<div class="banner error">${esc(state.histError)}</div>`
+      : `<div class="hist-empty">아직 저장된 연혁이 없습니다.<br>첨부 자료(시카고언약장로교회 연혁, ${HIST_SEED[0].year}–${HIST_SEED[HIST_SEED.length - 1].year}년, ${HIST_SEED.length}건)를 불러와 시작할 수 있습니다.<br>
+         <button class="btn primary" type="button" data-ha="importSeed">첨부 연혁 자료 불러오기</button></div>`;
+    return;
+  }
+  const order = sortHist();
+  const shown = order.filter((o) => o.i === histEdit || histMatches(o.h));
+  const groups = [];
+  shown.forEach((o) => {
+    const y = Number(o.h.year) || 0;
+    let g = groups[groups.length - 1];
+    if (!g || g.y !== y) { g = { y, items: [] }; groups.push(g); }
+    g.items.push(o);
+  });
+  if (histDescOrder) { groups.reverse(); groups.forEach((g) => g.items.reverse()); }
+  $('histInfo').textContent = shown.length === state.hist.length ? `전체 ${state.hist.length}건` : `${shown.length}건 / 전체 ${state.hist.length}건`;
+  $('histList').innerHTML = groups.length ? groups.map((g) => `
+    <div class="hyear" data-year="${g.y}">
+      <div class="hy"><span class="hyl">${g.y ? g.y + '년' : '연도 없음'}</span><span class="cnt">${g.items.length}건</span>
+        <button class="mini-add" type="button" data-ha="addIn" data-y="${g.y || ''}">+ 이 해에 추가</button></div>
+      ${g.items.map((o) => (o.i === histEdit ? histEditRow(o.i) : `
+      <div class="hrow" data-hi="${o.i}" tabindex="0"><div class="hd">${hl(o.h.date)}</div><div class="ht">${hl(o.h.text)}</div></div>`)).join('')}
+    </div>`).join('') : '<div class="hist-empty">검색 결과가 없습니다.</div>';
+}
+function sameYearNeighbor(i, dir) {
+  const y = Number(state.hist[i].year) || 0;
+  const order = sortHist().filter((o) => o.y === y).map((o) => o.i);
+  const k = order.indexOf(i) + dir;
+  return k >= 0 && k < order.length ? order[k] : -1;
+}
+function histEditRow(i) {
+  const h = state.hist[i];
+  return `<div class="hrow editing" data-hi="${i}">
+    <div>
+      <div class="hgrid">
+        <div><label class="f">연도</label><input class="inp" type="number" min="1900" max="2100" data-hf="year" value="${esc(h.year)}"></div>
+        <div><label class="f">날짜</label><input class="inp" data-hf="date" value="${esc(h.date)}" placeholder="예: 3월 6일 / 8월 23일 ~ 30일"></div>
+      </div>
+      <label class="f">내용</label>
+      <textarea class="inp" rows="2" data-hf="text" placeholder="내용">${esc(h.text)}</textarea>
+      <div class="hbtns">
+        <button type="button" data-ha="up" ${sameYearNeighbor(i, -1) < 0 ? 'disabled' : ''}>▲ 위로</button>
+        <button type="button" data-ha="down" ${sameYearNeighbor(i, 1) < 0 ? 'disabled' : ''}>▼ 아래로</button>
+        <button type="button" class="del" data-ha="del">삭제</button>
+        <button type="button" class="done" data-ha="done">완료</button>
+      </div>
+    </div></div>`;
+}
+function openHistEdit(i, field) {
+  histEdit = i; renderHist();
+  const row = $('histList').querySelector(`.hrow.editing`);
+  if (row) {
+    row.scrollIntoView({ block: 'nearest' });
+    const el = row.querySelector(`[data-hf="${field || 'text'}"]`);
+    if (el) { el.focus(); autoGrow(el); }
+    row.querySelectorAll('textarea').forEach(autoGrow);
+  }
+}
+function closeHistEdit(render = true) {
+  if (histEdit < 0) return;
+  const i = histEdit, h = state.hist[i];
+  if (h && !String(h.text).trim() && !String(h.date).trim()) state.hist.splice(i, 1);  // 빈 항목은 버림
+  histEdit = -1;
+  if (render) {
+    renderHist();
+    if (h) {
+      const k = state.hist.indexOf(h);
+      const el = k >= 0 && $('histList').querySelector(`.hrow[data-hi="${k}"]`);
+      if (el) el.scrollIntoView({ block: 'nearest' });
+    }
+  }
+}
+function addHist(year) {
+  const y = Number(year) || Number(state.hist.length ? Math.max(...state.hist.map((h) => Number(h.year) || 0)) : new Date().getFullYear());
+  closeHistEdit(false);
+  state.hist.push({ year: y, date: '', text: '' });
+  if (histDec !== 'all' && Math.floor(y / 10) * 10 !== Number(histDec)) histDec = 'all';
+  openHistEdit(state.hist.length - 1, 'date');
+}
+
+$('view-hist').addEventListener('click', (e) => {
+  const chip = e.target.closest('[data-dec]');
+  if (chip) { histDec = chip.dataset.dec; renderHist(); return; }
+  const a = e.target.closest('[data-ha]');
+  if (a) {
+    const act = a.dataset.ha;
+    if (act === 'importSeed') { state.hist = clone(HIST_SEED); setHistDirty(true); renderHist(); toast(`첨부 연혁 ${HIST_SEED.length}건을 불러왔습니다. [저장]을 눌러 시트에 기록하세요.`); return; }
+    if (act === 'addNew') { addHist(); setHistDirty(true); return; }
+    if (act === 'addIn') { addHist(a.dataset.y); setHistDirty(true); return; }
+    if (histEdit < 0) return;
+    if (act === 'done') { closeHistEdit(); return; }
+    if (act === 'del') {
+      const h = state.hist[histEdit];
+      if (!confirm(`'${(h.date ? h.date + ' ' : '') + h.text.slice(0, 30)}' 항목을 삭제할까요?`)) return;
+      state.hist.splice(histEdit, 1); histEdit = -1; setHistDirty(true); renderHist(); return;
+    }
+    if (act === 'up' || act === 'down') {
+      const j = sameYearNeighbor(histEdit, act === 'up' ? -1 : 1);
+      if (j < 0) return;
+      [state.hist[histEdit], state.hist[j]] = [state.hist[j], state.hist[histEdit]];
+      setHistDirty(true); openHistEdit(j); return;
+    }
+    return;
+  }
+  const row = e.target.closest('.hrow[data-hi]:not(.editing)');
+  if (row) { closeHistEdit(false); openHistEdit(Number(row.dataset.hi)); }
+});
+$('view-hist').addEventListener('keydown', (e) => {
+  if (e.target.matches('.hrow[data-hi]:not(.editing)') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.click(); }
+  if (e.target.dataset && e.target.dataset.hf && (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey)))) { e.preventDefault(); closeHistEdit(); }
+});
+$('view-hist').addEventListener('input', (e) => {
+  const f = e.target.dataset && e.target.dataset.hf;
+  if (f && histEdit >= 0) {
+    state.hist[histEdit][f] = f === 'year' ? (Number(e.target.value) || '') : e.target.value;
+    if (e.target.tagName === 'TEXTAREA') autoGrow(e.target);
+    setHistDirty(true);
+    return;
+  }
+  if (e.target.id === 'histQ') { histQ = e.target.value.trim(); renderHist(); }
+});
+$('histDesc').addEventListener('change', (e) => { histDescOrder = e.target.checked; renderHist(); });
+
+function renderHistDoc() {
+  const order = sortHist().filter((o) => String(o.h.text).trim() || String(o.h.date).trim());
+  $('pageStyle').textContent = '@page { size: letter portrait; margin: 14mm 12mm; }';
+  if (!order.length) { $('histSheet').innerHTML = '<div class="empty">연혁이 없습니다. \'교회 연혁\' 탭에서 입력하세요.</div>'; return; }
+  let html = '<h1>시카고언약장로교회 연혁</h1><table class="hdoc"><colgroup><col style="width:11%"><col style="width:17%"><col></colgroup><tbody>';
+  for (let k = 0; k < order.length;) {
+    let m = k; while (m + 1 < order.length && order[m + 1].y === order[k].y) m++;
+    for (let r = k; r <= m; r++) {
+      const h = order[r].h;
+      html += '<tr>' + (r === k ? `<td class="y" rowspan="${m - k + 1}">${order[k].y ? order[k].y + '년' : ''}</td>` : '') +
+        `<td class="d">${esc(h.date)}</td><td class="t">${esc(h.text)}</td></tr>`;
+    }
+    k = m + 1;
+  }
+  $('histSheet').innerHTML = html + '</tbody></table>';
+}
 
 /* ---------- 시작 ---------- */
 (async function init() {
@@ -1116,6 +1386,7 @@ window.addEventListener('beforeunload', (e) => { if (state.dirty) { e.preventDef
     state.years = (r.years || []).map(Number);
     const y = state.years[0] || new Date().getFullYear();
     await loadYear(y);
+    await loadHistory();
   } catch (err) {
     $('banner').innerHTML = `<div class="banner error">${esc(err.message)} — API_URL 과 웹 앱 배포 설정(액세스: 모든 사용자)을 확인해 주세요.</div>`;
     state.year = new Date().getFullYear(); renderAll();
