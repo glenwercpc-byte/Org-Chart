@@ -167,69 +167,69 @@
   .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-right: auto; }
   .seg button { border: 0; background: #fff; padding: 7px 14px; cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
-  .chart { -webkit-print-color-adjust: exact; print-color-adjust: exact; --ln: 1.5px solid #222; font-size: 13px; color: #111; min-width: 900px; padding: 4px 6px 10px; }
+  .chart { -webkit-print-color-adjust: exact; print-color-adjust: exact; --ln: 1.5px solid #222; font-size: 12.5px; color: #111; width: max-content; min-width: 560px; margin: 0 auto; padding: 4px 6px 10px; zoom: var(--fz, 1); }
   .chart .ttl { display: table; margin: 0 auto 14px; background: #e3e3e3; color: #111; border: 1px solid #c9c9c9; font-weight: 700; font-size: 20px; padding: 4px 34px; letter-spacing: .5px; }
-  .chart .box { border: 1.5px solid #222; background: #fff; padding: 3px 10px; text-align: center; white-space: nowrap; line-height: 1.25; }
+  .chart .box { border: 1.5px solid #222; background: #fff; padding: 2px 8px; text-align: center; white-space: nowrap; line-height: 1.25; }
   .chart .col3 { display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); }
   .chart .spine { border-left: 2px solid #222; }
   .chart .top { display: flex; flex-direction: column; align-items: center; }
   .chart .top .v { width: 0; height: 12px; border-left: 2px solid #222; }
-  .chart .sides { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); row-gap: 8px; padding: 10px 0; }
+  .chart .sides { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); row-gap: 6px; padding: 8px 0; }
   .chart .sides::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; margin-left: -1px; border-left: 2px solid #222; }
   .chart .sl, .chart .sr { display: flex; align-items: center; }
   .chart .sl { grid-column: 1; justify-content: flex-end; }
   .chart .sr { grid-column: 3; justify-content: flex-start; }
   .chart .sitem { display: flex; align-items: center; }
-  .chart .sl .sitem::after, .chart .sr .sitem::before { content: ''; width: var(--sline, 44px); border-top: var(--ln); }
+  .chart .sl .sitem::after, .chart .sr .sitem::before { content: ''; width: var(--sline, 18px); border-top: var(--ln); }
   .chart .sl .sitem.noline::after, .chart .sr .sitem.noline::before { border-top: 0; }
-  .chart .sitem > .box { width: 168px; }
-  .chart .kids .box { width: 150px; }
-  .chart .top .box { width: 168px; }
-  .chart .bottom ul.h > li > .box { min-width: 120px; }
-  .chart .kids { display: flex; flex-direction: column; position: relative; padding-left: 12px; }
-  .chart .kids::before { content: ''; position: absolute; left: 0; top: 50%; width: 12px; border-top: var(--ln); }
-  .chart .kid { position: relative; padding: 3px 0 3px 12px; }
+  .chart .sitem > .box { width: 112px; }
+  .chart .kids .box { width: 100px; }
+  .chart .top .box { width: 112px; }
+  .chart .bottom ul.h > li > .box { min-width: 96px; }
+  .chart .kids { display: flex; flex-direction: column; position: relative; padding-left: 10px; }
+  .chart .kids::before { content: ''; position: absolute; left: 0; top: 50%; width: 10px; border-top: var(--ln); }
+  .chart .kid { position: relative; padding: 2px 0 2px 12px; }
   .chart .kid::before { content: ''; position: absolute; left: 0; top: 50%; width: 12px; border-top: var(--ln); }
   .chart .kid::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; border-left: var(--ln); }
   .chart .kid:first-child::after { top: 50%; }
   .chart .kid:last-child::after { bottom: 50%; }
   .chart .kid:only-child::after { display: none; }
-  .chart .kids.kl { padding-left: 0; padding-right: 12px; }
+  .chart .kids.kl { padding-left: 0; padding-right: 10px; }
   .chart .kids.kl::before { left: auto; right: 0; }
-  .chart .kids.kl .kid { padding: 3px 12px 3px 0; }
+  .chart .kids.kl .kid { padding: 2px 12px 2px 0; }
   .chart .kids.kl .kid::before { left: auto; right: 0; }
   .chart .kids.kl .kid::after { left: auto; right: 0; }
   .chart .box.add.vbox.small { min-height: 56px; padding: 6px 2px; }
   /* 가로 막대 트리 (팀/부서/소그룹/하단) */
   .chart ul.h { display: flex; list-style: none; margin: 0; padding: 0; }
-  .chart ul.h > li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 12px 3px 0; }
+  .chart ul.h > li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 10px 2px 0; }
   .chart ul.h > li::before, .chart ul.h > li::after { content: ''; position: absolute; top: 0; width: 50%; border-top: var(--ln); }
   .chart ul.h > li::before { left: 0; }
   .chart ul.h > li::after { right: 0; }
-  .chart ul.h > li > .drop { position: absolute; top: 0; left: 50%; height: 12px; border-left: var(--ln); }
+  .chart ul.h > li > .drop { position: absolute; top: 0; left: 50%; height: 10px; border-left: var(--ln); }
   .chart ul.h > li:first-child::before, .chart ul.h > li:last-child::after { border-top: 0; }
   .chart ul.h.keep-l > li:first-child::before { border-top: var(--ln); }
   .chart ul.h.keep-r > li:last-child::after { border-top: var(--ln); }
   .chart ul.h > li:only-child::before, .chart ul.h > li:only-child::after { border-top: 0; }
-  .chart .stem { width: 0; height: 12px; border-left: var(--ln); }
-  .chart .vbox { writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; padding: 8px 2px; min-height: 120px; }
-  .chart .team > .vbox { min-height: 128px; padding: 8px 3px; }
+  .chart .stem { width: 0; height: 10px; border-left: var(--ln); }
+  .chart .vbox { writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 1px; padding: 5px 1px; min-height: 84px; }
+  .chart .team > .vbox { min-height: 92px; padding: 5px 2px; }
   .chart .teams-wrap .half { display: flex; padding-top: 0; }
   .chart .teams-wrap .half.l { justify-content: flex-end; }
   .chart .teams-wrap .half.r { justify-content: flex-start; }
-  .chart .teams-wrap .half > ul.h { padding-top: 14px; }
+  .chart .teams-wrap .half > ul.h { padding-top: 12px; }
   .chart .teams-wrap .half > ul.h { width: auto; }
   .chart .teams-wrap .bar { position: relative; }
-  .chart .teams-wrap .bar::before { content: ''; position: absolute; top: 14px; left: 0; right: 0; border-top: var(--ln); }
+  .chart .teams-wrap .bar::before { content: ''; position: absolute; top: 12px; left: 0; right: 0; border-top: var(--ln); }
   .chart .teams-wrap .half.l > ul.h > li:last-child::after, .chart .teams-wrap .half.r > ul.h > li:first-child::before { border-top: var(--ln); }
   .chart .teams-wrap .half.l > ul.h > li:last-child::after { right: -1px; width: calc(50% + 1px); }
   .chart .sub3 { display: flex; flex-direction: column; align-items: center; width: 0; }
-  .chart .hbox { white-space: nowrap; padding: 2px 10px; }
-  .chart .lvl3.vert ul.h > li .box { min-height: 70px; }
+  .chart .hbox { white-space: normal; width: max-content; max-width: 104px; padding: 2px 6px; font-size: 11.5px; }
+  .chart .lvl3.vert ul.h > li .box { min-height: 52px; }
   .chart .bottom { display: flex; justify-content: center; }
   .chart .bottom .box { padding: 3px 12px; }
   .chart .spine-gap { height: 18px; display: grid; grid-template-columns: minmax(0, 1fr) 2px minmax(0, 1fr); }
-  .chart-wrap { overflow-x: auto; }
+  .chart-wrap { overflow-x: auto; position: relative; }
 
   /* ---------- 교회 연혁 ---------- */
   .hist-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
@@ -286,13 +286,15 @@
     .row-labels { display: none; }
     .row, .row.grp { padding-bottom: 8px; border-bottom: 1px solid #f0f1f4; }
     .sheet { padding: 16px 10px; }
+    .opanel { position: fixed; left: 8px !important; right: 8px; top: auto !important; bottom: 8px; width: auto; z-index: 30; }
+    .org-hint-m { display: block !important; }
   }
 
   @media print {
 
     body { background: #fff; padding: 0; }
     .topbar, .preview-tools, .banner, #view-gigu, #view-buseo, #view-org, #view-hist, .toast { display: none !important; }
-    .chart { min-width: 0; zoom: .93; break-inside: avoid; }
+    .chart { zoom: var(--pz, 1) !important; break-inside: avoid; }
     main { padding: 0; max-width: none; }
     #view-preview { display: block !important; }
     .sheet { border: 0; padding: 0; overflow: visible; }
@@ -349,7 +351,7 @@
     <div class="org-toolbar">
       <div>
         <h2>교회 조직도</h2>
-        <p>박스를 누르면 이름 수정·순서 이동·옆/하위 칸 추가·삭제를 할 수 있습니다. 점선 <b>+</b> 박스는 새 칸 추가입니다.</p>
+        <p>박스를 누르면 이름 수정·순서 이동·옆/하위 칸 추가·삭제를 할 수 있습니다. 점선 <b>+</b> 박스는 새 칸 추가입니다.<span class="org-hint-m" style="display:none">휴대폰에서는 조직도 전체가 한 화면에 보이며, 두 손가락으로 벌려 확대할 수 있습니다.</span></p>
       </div>
       <div class="org-actions">
         <label class="switch"><input type="checkbox" id="editToggle" checked> 편집 모드</label>
@@ -682,7 +684,7 @@ function renderPreview() {
   $('sheet').hidden = state.pv !== 'table';
   $('orgSheet').hidden = state.pv !== 'org';
   $('histSheet').hidden = state.pv !== 'hist';
-  $('pageStyle').textContent = state.pv === 'org' ? '@page { size: letter landscape; margin: 8mm; }' : '@page { size: letter portrait; margin: 12mm; }';
+  $('pageStyle').textContent = state.pv === 'org' ? '@page { size: letter portrait; margin: 8mm; }' : '@page { size: letter portrait; margin: 12mm; }';
   document.querySelectorAll('[data-pv]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pv === state.pv)));
   if (state.pv === 'org') { renderChart($('orgChart'), false); return; }
   if (state.pv === 'hist') { renderHistDoc(); return; }
@@ -904,6 +906,7 @@ function renderChart(el, edit) {
     h += `<div class="spine-gap"><div></div><div class="spine"></div><div></div></div>
       <div class="bottom"><ul class="h">${bottom.map((e) => `<li><span class="drop"></span>${B.box('org.bottom.' + e.i, e.x)}</li>`).join('')}${edit ? `<li><span class="drop"></span>${B.add('org.bottom', '아래 칸')}</li>` : ''}</ul></div>`;
   }
+  h += '</div>';
   if (edit) h += `<div class="opanel" id="opanel" role="dialog" aria-label="칸 편집">
       <div class="opt" id="opTitle"></div>
       <input class="inp" id="opName" placeholder="칸 이름" autocomplete="off">
@@ -915,7 +918,7 @@ function renderChart(el, edit) {
         <button type="button" data-op="del" class="del">삭제</button>
         <button type="button" data-op="close" class="done">완료</button>
       </div></div>`;
-  el.innerHTML = h + '</div>';
+  el.innerHTML = h;
   alignChart(el);
 }
 
@@ -923,9 +926,10 @@ function renderChart(el, edit) {
    오른쪽 끝을 오른쪽 기구(예: 장년 교육부) 박스의 오른쪽 끝에 맞춘다 */
 function alignChart(el, again) {
   const chart = el.querySelector('.chart');
-  if (!again) chart && (chart.style.minWidth = '');
+  if (!again && chart) { chart.style.minWidth = ''; chart.style.width = ''; chart.style.removeProperty('--fz'); }
   const bar = el.querySelector('.teams-wrap .bar');
-  if (!chart || !bar || !chart.offsetWidth) return;   // 화면에 안 보일 때는 건너뜀
+  if (!chart || !chart.offsetWidth) return;   // 화면에 안 보일 때는 건너뜀
+  if (!bar) { if (!again) fitChart(el); return; }
   const sides = el.querySelector('.sides');
   const ulL = el.querySelector('.teams-wrap .half.l > ul.h');
   const ulR = el.querySelector('.teams-wrap .half.r > ul.h');
@@ -942,19 +946,38 @@ function alignChart(el, again) {
   const spread = (lis, dx) => {
     if (!lis.length || dx < 0.5) return;
     const p = dx / (2 * lis.length - 1);
-    lis.forEach((li) => { li.style.paddingLeft = (3 + p) + 'px'; li.style.paddingRight = (3 + p) + 'px'; });
+    lis.forEach((li) => { li.style.paddingLeft = (2 + p) + 'px'; li.style.paddingRight = (2 + p) + 'px'; });
   };
   spread(lisR, R - natR);
   spread(lisL, R - natL);
-  if (sides && target && R - target > 0.5) sides.style.setProperty('--sline', (44 + R - target) + 'px');
+  if (sides && target && R - target > 0.5) sides.style.setProperty('--sline', (18 + R - target) + 'px');
   // 가장 멀리 나간 칸이 화면 폭을 넘으면 폭을 넓혀 다시 맞춤 (가운데 줄 유지)
   if (!again) {
     let need = 0;
     chart.querySelectorAll('.box').forEach((b) => { const r = b.getBoundingClientRect(); need = Math.max(need, spine - r.left, r.right - spine); });
     const want = Math.ceil(2 * need + 24);
     if (want > chart.offsetWidth) { chart.style.minWidth = want + 'px'; alignChart(el, true); }
+    fitChart(el);
   }
 }
+/* 화면: 차트 전체가 상자 폭에 들어가게 축소(모바일은 핀치 줌으로 확대).
+   인쇄: 세로 Letter 한 장(약 740×980px)에 들어가게 축소 */
+function fitChart(el) {
+  const chart = el.querySelector('.chart');
+  if (!chart || !chart.offsetWidth) return;
+  const W = chart.offsetWidth, H = chart.offsetHeight;
+  chart.style.width = W + 'px';   // 축소해도 배치가 바뀌지 않게 폭 고정
+  const fz = Math.min(1, (el.clientWidth - 2) / W);
+  chart.style.setProperty('--pz', Math.min(1, 740 / W, 980 / H).toFixed(4));
+  if (fz < 0.999) chart.style.setProperty('--fz', fz.toFixed(4));
+}
+let fitTimer = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => {
+    ['orgEdit', 'orgChart'].forEach((id) => { const el = $(id); if (el && el.offsetWidth) { alignChart(el); if (id === 'orgEdit' && orgSel) openPanel(orgSel, false); } });
+  }, 150);
+});
 
 function fixBrackets() { /* 선은 CSS 로 그림 */ }
 
@@ -993,11 +1016,11 @@ function openPanel(path, focus = true) {
   $('opChild').disabled = inf.level >= ZDEPTH[inf.zone];
   $('opChild').textContent = inf.zone === 'teams' && inf.level < 3 ? `+ ${['부서', '소그룹'][inf.level - 1]} 추가` : '+ 하위 칸 추가';
   panel.classList.add('open');
-  const c = chart.getBoundingClientRect(), r = boxEl.getBoundingClientRect();
-  let leftPx = r.left - c.left + r.width / 2 - panel.offsetWidth / 2;
-  leftPx = Math.max(4, Math.min(leftPx, chart.clientWidth - panel.offsetWidth - 4));
+  const wrap = $('orgEdit'), c = wrap.getBoundingClientRect(), r = boxEl.getBoundingClientRect();
+  let leftPx = r.left - c.left + wrap.scrollLeft + r.width / 2 - panel.offsetWidth / 2;
+  leftPx = Math.max(wrap.scrollLeft + 4, Math.min(leftPx, wrap.scrollLeft + wrap.clientWidth - panel.offsetWidth - 4));
   panel.style.left = leftPx + 'px';
-  panel.style.top = (r.bottom - c.top + 8) + 'px';
+  panel.style.top = (r.bottom - c.top + wrap.scrollTop + 8) + 'px';
   if (focus) { $('opName').focus(); $('opName').select(); }
 }
 function closePanel() {
