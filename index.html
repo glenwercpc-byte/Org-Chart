@@ -1420,6 +1420,19 @@ function renderHistDoc() {
     const y = state.years[0] || new Date().getFullYear();
     await loadYear(y);
     await loadHistory();
+
+    // ?mode=view : 조회모드 — 미리보기 + 부서조직표 자동 선택
+    const _urlMode = new URLSearchParams(location.search).get('mode');
+    if (_urlMode === 'view') {
+      document.querySelectorAll('button.tab[data-view]').forEach(t => {
+        if (t.getAttribute('data-view') === 'preview') t.click();
+      });
+      setTimeout(() => {
+        document.querySelectorAll('[data-pv]').forEach(b => {
+          if (b.getAttribute('data-pv') === 'table') b.click();
+        });
+      }, 150);
+    }
   } catch (err) {
     $('banner').innerHTML = `<div class="banner error">${esc(err.message)} — API_URL 과 웹 앱 배포 설정(액세스: 모든 사용자)을 확인해 주세요.</div>`;
     state.year = new Date().getFullYear(); renderAll();
