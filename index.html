@@ -1421,9 +1421,9 @@ function renderHistDoc() {
     await loadYear(y);
     await loadHistory();
 
-    // ?mode=view : 조회모드 — 미리보기 + 부서조직표 자동 선택
+    // ?mode=view / ?mode=admin : 미리보기 + 부서조직표 자동 선택
     const _urlMode = new URLSearchParams(location.search).get('mode');
-    if (_urlMode === 'view') {
+    if (_urlMode === 'view' || _urlMode === 'admin') {
       document.querySelectorAll('button.tab[data-view]').forEach(t => {
         if (t.getAttribute('data-view') === 'preview') t.click();
       });
