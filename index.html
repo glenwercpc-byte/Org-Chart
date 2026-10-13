@@ -970,21 +970,6 @@ function fitChart(el) {
   const fz = Math.min(1, (el.clientWidth - 2) / W);
   chart.style.setProperty('--pz', Math.min(1, 740 / W, 980 / H).toFixed(4));
   if (fz < 0.999) chart.style.setProperty('--fz', fz.toFixed(4));
-  // 세로 화면 휴대폰: 폭에 맞춰 줄이면 화면 위쪽 절반만 차므로, 세로 간격·박스 길이를 늘려 화면 높이를 채움
-  if (fz < 0.999 && window.innerWidth <= 720 && window.innerHeight > window.innerWidth) {
-    const bar = document.querySelector('.topbar');
-    // 휴대폰 브라우저 주소창·하단 도구막대를 고려해 '보이는 높이' 중 작은 값 기준, 여유를 넉넉히 둠
-    const vh = Math.min(window.innerHeight, window.visualViewport ? window.visualViewport.height : window.innerHeight, fitVH || 1e9);
-    fitVH = vh;
-    const want = ((vh - (bar ? bar.offsetHeight : 0) - 56) * 0.9) / fz;   // 차트 자체 단위의 목표 높이
-    if (want > H * 1.05) {
-      // 간격(--vs)은 많이, 박스 길이(--vb)는 그 절반쯤만 늘림
-      const setV = (g) => { chart.style.setProperty('--vs', g.toFixed(3)); chart.style.setProperty('--vb', (1 + (g - 1) * 0.45).toFixed(3)); };
-      setV(3);
-      const per = (chart.offsetHeight - H) / 2;                       // g 1 늘 때마다 늘어나는 높이
-      setV(per > 0 ? Math.min(6, 1 + (want - H) / per) : 1);
-    }
-  }
   // transform 축소는 배치 크기를 줄이지 않으므로 여백을 음수로 줘서 실제 차지하는 크기를 맞춤
   if (fz < 0.999) {
     const H2 = chart.offsetHeight;
