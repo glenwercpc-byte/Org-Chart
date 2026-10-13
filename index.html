@@ -973,7 +973,10 @@ function fitChart(el) {
   // 세로 화면 휴대폰: 폭에 맞춰 줄이면 화면 위쪽 절반만 차므로, 세로 간격·박스 길이를 늘려 화면 높이를 채움
   if (fz < 0.999 && window.innerWidth <= 720 && window.innerHeight > window.innerWidth) {
     const bar = document.querySelector('.topbar');
-    const want = (window.innerHeight - (bar ? bar.offsetHeight : 0) - 40) / fz;   // 차트 자체 단위의 목표 높이
+    // 휴대폰 브라우저 주소창·하단 도구막대를 고려해 '보이는 높이' 중 작은 값 기준, 여유를 넉넉히 둠
+    const vh = Math.min(window.innerHeight, window.visualViewport ? window.visualViewport.height : window.innerHeight, fitVH || 1e9);
+    fitVH = vh;
+    const want = ((vh - (bar ? bar.offsetHeight : 0) - 56) * 0.9) / fz;   // 차트 자체 단위의 목표 높이
     if (want > H * 1.05) {
       // 간격(--vs)은 많이, 박스 길이(--vb)는 그 절반쯤만 늘림
       const setV = (g) => { chart.style.setProperty('--vs', g.toFixed(3)); chart.style.setProperty('--vb', (1 + (g - 1) * 0.45).toFixed(3)); };
@@ -988,8 +991,11 @@ function fitChart(el) {
     chart.style.margin = `0 ${-(W * (1 - fz)).toFixed(1)}px ${-(H2 * (1 - fz)).toFixed(1)}px 0`;
   }
 }
-let fitTimer = 0;
+let fitTimer = 0, fitVW = window.innerWidth, fitVH = 0;
 window.addEventListener('resize', () => {
+  // 스크롤할 때 주소창이 숨겨지며 생기는 높이 변화는 무시하고, 폭(회전 등)이 바뀔 때만 다시 맞춤
+  if (window.innerWidth === fitVW) return;
+  fitVW = window.innerWidth; fitVH = 0;
   clearTimeout(fitTimer);
   fitTimer = setTimeout(() => {
     ['orgEdit', 'orgChart'].forEach((id) => { const el = $(id); if (el && el.offsetWidth) { alignChart(el); if (id === 'orgEdit' && orgSel) openPanel(orgSel, false); } });
