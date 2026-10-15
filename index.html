@@ -267,6 +267,34 @@
   table.hdoc td.t { white-space: pre-line; }
   table.hdoc tr { break-inside: avoid; }
 
+  /* 연령별 명단 */
+  .age-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .age-bar label.f { margin: 0; }
+  .age-bar input[type=date] { width: 160px; }
+  .age-info { font-size: 12.5px; color: var(--muted); margin: 0 2px 10px; }
+  .age-info b { color: var(--navy); }
+  .age-table { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .age-row { display: grid; grid-template-columns: 96px 64px 1fr; border-top: 1px solid #eef0f4; align-items: stretch; }
+  .age-row:first-child { border-top: 0; }
+  .age-row > div { padding: 8px 10px; }
+  .age-row .al { font-weight: 700; color: var(--navy); display: flex; align-items: center; justify-content: center; background: #f7f8fb; border-right: 1px solid #eef0f4; }
+  .age-row .ac { display: flex; align-items: center; justify-content: center; font-weight: 700; border-right: 1px solid #eef0f4; }
+  .age-row textarea { width: 100%; border: 1px solid transparent; background: transparent; resize: none; font: inherit; line-height: 1.55; padding: 4px 6px; border-radius: 6px; min-height: 32px; }
+  .age-row textarea:hover { border-color: var(--line); }
+  .age-row textarea:focus { outline: none; border-color: var(--gold); background: #fffaf0; }
+  .age-row.head { background: var(--navy); color: #fff; font-weight: 700; font-size: 13px; }
+  .age-row.head > div { background: transparent; color: #fff; display: flex; align-items: center; justify-content: center; border-color: rgba(255,255,255,.15); }
+  .age-row.nodata .al { color: #8a6d1f; }
+  .age-row.total { background: #f7f8fb; font-weight: 700; }
+  table.adoc { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.adoc th, table.adoc td { border: 1px solid #999; padding: 5px 8px; vertical-align: middle; }
+  table.adoc th { background: #e3e3e3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table.adoc td.l, table.adoc td.c { text-align: center; white-space: nowrap; font-weight: 700; }
+  table.adoc td.n { line-height: 1.6; }
+  table.adoc tr { break-inside: avoid; }
+  table.adoc tr.tot td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .adoc-sub { text-align: center; color: #555; font-size: 12px; margin: -4px 0 10px; }
+
   @media (max-width: 720px) {
     body { font-size: 14px; }
     .topbar-inner { padding: 8px 12px; }
@@ -283,6 +311,9 @@
     .row > .icon-btn:last-child { grid-column: 2; grid-row: 1; }
     .hrow { grid-template-columns: 1fr; gap: 2px; }
     .hgrid { grid-template-columns: 90px 1fr; }
+    .age-row { grid-template-columns: 76px 44px 1fr; }
+    .age-row .al { white-space: nowrap; font-size: 12.5px; padding: 6px 2px; }
+    .age-row > div { padding: 6px; }
     .row-labels { display: none; }
     .row, .row.grp { padding-bottom: 8px; border-bottom: 1px solid #f0f1f4; }
     .sheet { padding: 16px 10px; }
@@ -293,7 +324,7 @@
   @media print {
 
     body { background: #fff; padding: 0; }
-    .topbar, .preview-tools, .banner, #view-gigu, #view-buseo, #view-org, #view-hist, .toast { display: none !important; }
+    .topbar, .preview-tools, .banner, #view-gigu, #view-buseo, #view-org, #view-hist, #view-age, .toast { display: none !important; }
     .chart { zoom: var(--pz, 1) !important; transform: none !important; margin: 0 auto !important; --vs: 1 !important; --vb: 1 !important; break-inside: avoid; }
     main { padding: 0; max-width: none; }
     #view-preview { display: block !important; }
@@ -322,6 +353,7 @@
     <button class="tab" role="tab" data-view="buseo" aria-selected="false">팀·부서</button>
     <button class="tab" role="tab" data-view="org" aria-selected="false">교회 조직도</button>
     <button class="tab" role="tab" data-view="hist" aria-selected="false">교회 연혁</button>
+    <button class="tab" role="tab" data-view="age" aria-selected="false">연령별 명단</button>
     <button class="tab" role="tab" data-view="preview" aria-selected="false">미리보기·인쇄</button>
   </nav>
 </header>
@@ -381,18 +413,39 @@
     <div id="histList"></div>
   </section>
 
+  <section id="view-age" hidden>
+    <div class="org-toolbar">
+      <div>
+        <h2>연령별 명단</h2>
+        <p>교인 명부의 생년월일로 연령대를 나눕니다(해지 교인 제외, 만 나이). 가져온 뒤 명단을 직접 고칠 수 있고, 연도별로 저장됩니다.</p>
+      </div>
+      <div class="org-actions">
+        <button class="btn primary" type="button" id="ageImportBtn">교인 명부에서 가져오기</button>
+      </div>
+    </div>
+    <div class="age-bar">
+      <label class="f" for="ageBase">기준일</label>
+      <input class="inp" type="date" id="ageBase">
+      <span class="age-info" id="ageTotal" style="margin:0"></span>
+    </div>
+    <div class="age-info" id="ageInfo"></div>
+    <div class="age-table" id="ageList"></div>
+  </section>
+
   <section id="view-preview" hidden>
     <div class="preview-tools">
       <div class="seg" role="group" aria-label="미리보기 종류">
         <button type="button" data-pv="table" aria-pressed="true">부서조직표</button>
         <button type="button" data-pv="org" aria-pressed="false">교회 조직도</button>
         <button type="button" data-pv="hist" aria-pressed="false">교회 연혁</button>
+        <button type="button" data-pv="age" aria-pressed="false">연령별 명단</button>
       </div>
       <button class="btn" type="button" onclick="window.print()">인쇄 / PDF 저장</button>
     </div>
     <div class="sheet" id="sheet"></div>
     <div class="sheet print-org" id="orgSheet" hidden><div class="chart-wrap" id="orgChart"></div></div>
     <div class="sheet" id="histSheet" hidden></div>
+    <div class="sheet" id="ageSheet" hidden></div>
   </section>
 </main>
 
@@ -423,6 +476,8 @@
    비워 두면 2026년 예시 데이터로 '데모 모드'로 동작합니다.
    ================================================================ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxZ1UYOx38_zxAKRetkv52xkTR1kllmVj0Fpc8TPOrq5QSdSduII4Efx1Fll1eDhfw_/exec';
+// 교인 명부(member-register) 앱의 Apps Script 주소 — 생년월일·해지 정보를 읽어 옵니다
+const MEMBER_API = 'https://script.google.com/macros/s/AKfycbx-N1Y8NaNVu1jiWMxIKQ7xoAQu_65_BKBrT9kZcgiBEN2vsJ52PBTVSVnzkNKQBN0Azw/exec';
 
 const DEMO = {
   2026: {
@@ -485,7 +540,8 @@ const ORG_ZONES = [
 ];
 const emptyOrg = () => ({ top: [], left: [], right: [], teams: [], bottom: [] });
 
-const state = { year: null, years: [], gigu: [], buseo: [], org: emptyOrg(), dirty: false, view: 'gigu', pv: 'table', hist: [], histDirty: false, histLoaded: false };
+const emptyAge = () => ({ base: '', groups: [] });
+const state = { year: null, years: [], gigu: [], buseo: [], org: emptyOrg(), age: emptyAge(), dirty: false, view: 'gigu', pv: 'table', hist: [], histDirty: false, histLoaded: false };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -551,7 +607,7 @@ async function post(body) {
 async function apiLoad(year) {
   if (!API_URL) {
     const d = DEMO[year] || { gigu: [], buseo: [] };
-    return { year, years: Object.keys(DEMO).map(Number).sort((a, b) => b - a), gigu: clone(d.gigu), buseo: clone(d.buseo), org: clone(d.org || emptyOrg()) };
+    return { year, years: Object.keys(DEMO).map(Number).sort((a, b) => b - a), gigu: clone(d.gigu), buseo: clone(d.buseo), org: clone(d.org || emptyOrg()), age: clone(d.age || emptyAge()) };
   }
   return jsonp({ action: 'load', year });
 }
@@ -560,9 +616,9 @@ async function apiYears() {
   return jsonp({ action: 'years' });
 }
 async function apiSave() {
-  const payload = { action: 'save', year: state.year, gigu: state.gigu, buseo: state.buseo, org: state.org };
+  const payload = { action: 'save', year: state.year, gigu: state.gigu, buseo: state.buseo, org: state.org, age: state.age };
   if (!API_URL) {
-    DEMO[state.year] = clone({ gigu: state.gigu, buseo: state.buseo, org: state.org });
+    DEMO[state.year] = clone({ gigu: state.gigu, buseo: state.buseo, org: state.org, age: state.age });
     await new Promise((r) => setTimeout(r, 300));
     return { ok: true, years: Object.keys(DEMO).map(Number).sort((a, b) => b - a) };
   }
@@ -684,10 +740,12 @@ function renderPreview() {
   $('sheet').hidden = state.pv !== 'table';
   $('orgSheet').hidden = state.pv !== 'org';
   $('histSheet').hidden = state.pv !== 'hist';
+  $('ageSheet').hidden = state.pv !== 'age';
   $('pageStyle').textContent = state.pv === 'org' ? '@page { size: letter portrait; margin: 8mm; }' : '@page { size: letter portrait; margin: 12mm; }';
   document.querySelectorAll('[data-pv]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pv === state.pv)));
   if (state.pv === 'org') { renderChart($('orgChart'), false); return; }
   if (state.pv === 'hist') { renderHistDoc(); return; }
+  if (state.pv === 'age') { renderAgeDoc(); return; }
   const gigu = state.gigu.filter((g) => g.name.trim());
   const buseo = state.buseo.filter((d) => d.dept.trim());
   if (!gigu.length && !buseo.length) { $('sheet').innerHTML = '<div class="empty">입력된 내용이 없습니다.</div>'; return; }
@@ -722,6 +780,7 @@ function renderPreview() {
 function renderAll() {
   renderYears(); renderGigu(); renderBuseo();
   if (state.view === 'org') renderOrgEdit();
+  if (state.view === 'age') renderAge();
   if (state.view === 'preview') renderPreview();
 }
 
@@ -1108,8 +1167,9 @@ function focusLast(listId) {
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
   state.view = t.dataset.view;
   document.querySelectorAll('.tab').forEach((x) => x.setAttribute('aria-selected', String(x === t)));
-  ['gigu', 'buseo', 'org', 'hist', 'preview'].forEach((v) => { $('view-' + v).hidden = v !== state.view; });
+  ['gigu', 'buseo', 'org', 'hist', 'age', 'preview'].forEach((v) => { $('view-' + v).hidden = v !== state.view; });
   if (state.view === 'hist') renderHist();
+  if (state.view === 'age') renderAge();
   if (state.view === 'preview') renderPreview();
   if (state.view === 'org') renderOrgEdit();
   if (state.view === 'gigu' || state.view === 'buseo') autoGrowAll($('view-' + state.view));
@@ -1126,6 +1186,7 @@ async function loadYear(year) {
     state.gigu = normGigu(d.gigu);
     state.buseo = normBuseo(d.buseo);
     state.org = normOrg(d.org);
+    state.age = normAge(d.age);
     orgSel = null;
     setDirty(false);
     renderAll();
@@ -1158,17 +1219,18 @@ $('yearForm').addEventListener('submit', async (e) => {
   if (state.years.includes(ny)) { $('yearErr').textContent = `${ny}년은 이미 있습니다. 위에서 선택해 수정하세요.`; return; }
   if (state.dirty && !confirm('저장하지 않은 변경 내용이 있습니다. 계속할까요?')) return;
   closeModal('yearModal');
-  let gigu = [], buseo = [], org = emptyOrg();
+  let gigu = [], buseo = [], org = emptyOrg(), age = emptyAge();
   if (src) {
-    if (Number(src) === state.year) { gigu = clone(state.gigu); buseo = clone(state.buseo); org = clone(state.org); }
+    if (Number(src) === state.year) { gigu = clone(state.gigu); buseo = clone(state.buseo); org = clone(state.org); age = clone(state.age); }
     else {
       setLoading(true);
-      try { const d = await apiLoad(Number(src)); gigu = normGigu(d.gigu); buseo = normBuseo(d.buseo); org = normOrg(d.org); }
+      try { const d = await apiLoad(Number(src)); gigu = normGigu(d.gigu); buseo = normBuseo(d.buseo); org = normOrg(d.org); age = normAge(d.age); }
       catch (err) { toast(err.message, true); setLoading(false); return; }
       setLoading(false);
     }
   }
-  state.year = ny; state.gigu = gigu; state.buseo = buseo; state.org = org;
+  state.year = ny; state.gigu = gigu; state.buseo = buseo; state.org = org; state.age = age;
+  if (age.groups.length) age.base = defaultAgeBase(ny);   // 새 해 기준일 (명단은 그대로 복사 — 필요하면 다시 가져오기)
   renderAll(); setDirty(true);
   toast(`${ny}년 조직표를 만들었습니다. 수정 후 저장하세요.`);
 });
@@ -1410,6 +1472,154 @@ function renderHistDoc() {
   $('histSheet').innerHTML = html + '</tbody></table>';
 }
 
+/* ---------- 연령별 명단 ---------- */
+// 위에서부터 나이 많은 순. [이름, 최소 나이, 최대 나이]
+const AGE_BANDS = [['90세 이상', 90, 999], ['85-89', 85, 89], ['80-84', 80, 84], ['75-79', 75, 79], ['70-74', 70, 74],
+  ['65-69', 65, 69], ['60-64', 60, 64], ['50-59', 50, 59], ['40-49', 40, 49], ['30-39', 30, 39], ['20-29', 20, 29]];
+const AGE_YOUNG = '20세 미만', AGE_NODATA = '자료없음';
+const DEMO_MEMBERS = [
+  ['교인가', '1931-05-02'], ['교인나', '1934-11-20'], ['교인다', '1938-02-14'], ['교인라', '1940-07-07'], ['교인마', '1944-03-30'],
+  ['교인바', '1946-12-01'], ['교인사', '1950-08-15'], ['교인아', '1953-01-09'], ['교인자', '1957-06-21'], ['교인차', '1961-10-03'],
+  ['교인카', '1964-04-18'], ['교인타', '1970-09-27'], ['교인파', '1978-12-24'], ['교인하', '1985-02-02'], ['교인갑', '1992-07-30'],
+  ['교인을', '1999-11-11'], ['교인병', ''], ['교인정', '1948-05-05', '2025-03-01', '이사']
+].map(([name, birthDate, terminationDate, terminationReason]) => ({ name, birthDate, terminationDate: terminationDate || '', terminationReason: terminationReason || '' }));
+
+function normAge(a) {
+  return { base: (a && a.base) || '', groups: ((a && a.groups) || []).map((g) => ({ label: g.label || '', names: g.names || '' })) };
+}
+const pad2 = (n) => String(n).padStart(2, '0');
+function ymd(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+function defaultAgeBase(year) {
+  const now = new Date(), cy = now.getFullYear();
+  if (year === cy) return ymd(now);
+  return year > cy ? `${year}-01-01` : `${year}-12-31`;
+}
+// 생년월일 문자열 → {y,m,d} (YYYY-MM-DD, ISO 시각 포함, MM-DD-YYYY, M/D/YYYY, 연도만)
+function parseBirth(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if (m) {
+    // 시트 날짜가 UTC 로 바뀌어 온 경우(예: 1950-03-11T06:00:00.000Z = 시카고 3월 11일 0시) 날짜 부분을 그대로 씀
+    return { y: +m[1], m: +m[2], d: +m[3] };
+  }
+  m = s.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{4})$/);
+  if (m) return { y: +m[3], m: +m[1], d: +m[2] };
+  m = s.match(/^(\d{4})$/);
+  if (m) return { y: +m[1], m: 1, d: 1 };
+  const t = new Date(s);
+  if (!isNaN(t.getTime()) && t.getFullYear() > 1880) return { y: t.getFullYear(), m: t.getMonth() + 1, d: t.getDate() };
+  return null;
+}
+function ageAt(b, base) {
+  const [y, m, d] = base.split('-').map(Number);
+  let a = y - b.y;
+  if (m < b.m || (m === b.m && d < b.d)) a--;
+  return a;
+}
+function bandOf(age) {
+  for (const [label, lo, hi] of AGE_BANDS) if (age >= lo && age <= hi) return label;
+  return AGE_YOUNG;
+}
+function isTerminated(m) { return !!(String(m.terminationDate || '').trim() || String(m.terminationReason || '').trim()); }
+
+async function apiMembers() {
+  if (!API_URL) return clone(DEMO_MEMBERS);
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 30000);
+  try {
+    const res = await fetch(MEMBER_API + (MEMBER_API.includes('?') ? '&' : '?') + 't=' + Date.now(), { signal: ctl.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data.members || data.data || []);
+    if (!Array.isArray(list)) throw new Error('교인 명부 형식을 알 수 없습니다.');
+    return list;
+  } catch (err) {
+    throw new Error('교인 명부에 연결할 수 없습니다. (' + (err.name === 'AbortError' ? '시간 초과' : err.message) + ')');
+  } finally { clearTimeout(t); }
+}
+function buildAgeGroups(members, base) {
+  const buckets = {}, all = AGE_BANDS.map((b) => b[0]).concat([AGE_YOUNG, AGE_NODATA]);
+  all.forEach((l) => (buckets[l] = []));
+  let active = 0, excluded = 0;
+  members.forEach((m) => {
+    const name = String(m.name || '').trim();
+    if (!name) return;
+    if (isTerminated(m)) { excluded++; return; }
+    active++;
+    const b = parseBirth(m.birthDate);
+    const a = b ? ageAt(b, base) : NaN;
+    buckets[b && a >= 0 && a < 130 ? bandOf(a) : AGE_NODATA].push(name);
+  });
+  const groups = all.filter((l) => l !== AGE_YOUNG || buckets[l].length)
+    .map((l) => ({ label: l, names: buckets[l].sort((x, y) => x.localeCompare(y, 'ko')).join(', ') }));
+  return { groups, active, excluded };
+}
+let ageNote = '';
+$('ageImportBtn').addEventListener('click', async () => {
+  const base = $('ageBase').value || state.age.base || defaultAgeBase(state.year);
+  if (state.age.groups.some((g) => g.names.trim()) && !confirm(`${state.year}년 연령별 명단을 교인 명부 기준(${base})으로 새로 만들까요?\n직접 고친 내용은 바뀝니다.`)) return;
+  setLoading(true, '교인 명부 불러오는 중…');
+  try {
+    const members = await apiMembers();
+    const r = buildAgeGroups(members, base);
+    state.age = { base, groups: r.groups };
+    ageNote = `교인 명부 ${r.active + r.excluded}명 중 해지 ${r.excluded}명을 빼고 ${r.active}명을 나눴습니다.`;
+    setDirty(true); renderAge();
+    toast(`연령별 명단을 만들었습니다 (총 ${r.active}명). [저장]을 눌러 기록하세요.`);
+  } catch (err) {
+    toast(err.message, true);
+  } finally { setLoading(false); }
+});
+$('ageBase').addEventListener('change', (e) => {
+  state.age.base = e.target.value; setDirty(true);
+  if (state.age.groups.length) $('ageInfo').innerHTML = `기준일을 바꿨습니다. 나이를 다시 계산하려면 <b>[교인 명부에서 가져오기]</b>를 누르세요.`;
+});
+function ageTotal() { return state.age.groups.reduce((n, g) => n + countNames(g.names), 0); }
+function updateAgeTotal() {
+  const n = ageTotal();
+  $('ageTotal').innerHTML = state.age.groups.length ? `총 <b>${n}</b>명` : '';
+  const t = $('ageList').querySelector('[data-age-total]');
+  if (t) t.textContent = n + '명';
+}
+function renderAge() {
+  $('ageBase').value = state.age.base || defaultAgeBase(state.year);
+  $('ageInfo').innerHTML = ageNote ? esc(ageNote) : (state.age.groups.length ? '' : `${state.year}년 명단이 아직 없습니다. <b>[교인 명부에서 가져오기]</b>를 누르면 생년월일로 연령대를 나눕니다.`);
+  ageNote = '';
+  if (!state.age.groups.length) { $('ageList').innerHTML = ''; $('ageTotal').innerHTML = ''; return; }
+  $('ageList').innerHTML = `<div class="age-row head"><div>연령대</div><div>인원</div><div>명단</div></div>` +
+    state.age.groups.map((g, i) => `
+    <div class="age-row${g.label === AGE_NODATA ? ' nodata' : ''}">
+      <div class="al">${esc(g.label)}</div>
+      <div class="ac" data-count="age.groups.${i}.names">${countNames(g.names)}명</div>
+      <div><textarea rows="1" data-k="age.groups.${i}.names" data-names placeholder="(없음)">${esc(g.names)}</textarea></div>
+    </div>`).join('') +
+    `<div class="age-row total"><div class="al">합계</div><div class="ac" data-age-total></div><div></div></div>`;
+  updateAgeTotal();
+  autoGrowAll($('ageList'));
+}
+$('view-age').addEventListener('input', (e) => { if (e.target.dataset && e.target.dataset.k) updateAgeTotal(); });
+$('view-age').addEventListener('change', (e) => {
+  if (!e.target.dataset || !e.target.dataset.k) return;
+  setTimeout(() => {   // 이름 정리(쉼표 통일) 뒤 인원 다시 셈
+    const c = $('ageList').querySelector(`[data-count="${e.target.dataset.k}"]`);
+    if (c) c.textContent = countNames(e.target.value) + '명';
+    updateAgeTotal();
+  });
+});
+
+function renderAgeDoc() {
+  $('pageStyle').textContent = '@page { size: letter portrait; margin: 12mm; }';
+  const gs = state.age.groups;
+  if (!gs.length) { $('ageSheet').innerHTML = '<div class="empty">연령별 명단이 없습니다. \'연령별 명단\' 탭에서 만들어 주세요.</div>'; return; }
+  const base = state.age.base ? state.age.base.replace(/^(\d{4})-(\d{2})-(\d{2})$/, (m, y, mo, d) => `${y}년 ${+mo}월 ${+d}일`) : '';
+  $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단</h1>
+    <div class="adoc-sub">${base ? `기준일 ${base} (만 나이) · ` : ''}총 ${ageTotal()}명</div>
+    <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
+    <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
+    gs.map((g) => `<tr><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
+    `<tr class="tot"><td class="l">합계</td><td class="c">${ageTotal()}</td><td></td></tr></tbody></table>`;
+}
+
 /* ---------- 시작 ---------- */
 (async function init() {
   showBanner();
@@ -1420,19 +1630,6 @@ function renderHistDoc() {
     const y = state.years[0] || new Date().getFullYear();
     await loadYear(y);
     await loadHistory();
-
-    // ?mode=view / ?mode=admin : 미리보기 + 부서조직표 자동 선택
-    const _urlMode = new URLSearchParams(location.search).get('mode');
-    if (_urlMode === 'view' || _urlMode === 'admin') {
-      document.querySelectorAll('button.tab[data-view]').forEach(t => {
-        if (t.getAttribute('data-view') === 'preview') t.click();
-      });
-      setTimeout(() => {
-        document.querySelectorAll('[data-pv]').forEach(b => {
-          if (b.getAttribute('data-pv') === 'table') b.click();
-        });
-      }, 150);
-    }
   } catch (err) {
     $('banner').innerHTML = `<div class="banner error">${esc(err.message)} — API_URL 과 웹 앱 배포 설정(액세스: 모든 사용자)을 확인해 주세요.</div>`;
     state.year = new Date().getFullYear(); renderAll();
