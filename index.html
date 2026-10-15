@@ -126,6 +126,14 @@
   .modal p { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
   .modal .grid { margin-bottom: 14px; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .modal.imp { max-width: 420px; }
+  .imp-list { margin: 8px 0 12px; padding: 10px 12px; background: #f7f8fb; border: 1px solid var(--line); border-radius: 10px; font-size: 13.5px; line-height: 1.75; }
+  .imp-list b { color: var(--navy); }
+  .imp-warn { background: #fff7e6; border: 1px solid #f1d39a; color: #7a5410; border-radius: 10px; padding: 8px 12px; font-size: 13px; margin-bottom: 12px; }
+  .imp-ok { color: #1d7a46; font-weight: 700; margin: 4px 0 8px; }
+  .imp-spin { display: flex; align-items: center; gap: 10px; padding: 18px 4px; color: var(--muted); }
+  .imp-spin::before { content: ''; width: 20px; height: 20px; border: 3px solid #d9deea; border-top-color: var(--navy); border-radius: 50%; animation: impspin .8s linear infinite; }
+  @keyframes impspin { to { transform: rotate(360deg); } }
   .modal .err { color: var(--danger); font-size: 13px; min-height: 18px; margin: -6px 0 8px; }
 
   .toast {
@@ -470,6 +478,16 @@
       <button class="btn primary" type="submit">만들기</button>
     </div>
   </form>
+</div>
+
+<!-- 교인 명부에서 가져오기 -->
+<div class="modal-bg" id="importModal">
+  <div class="modal imp" role="dialog" aria-labelledby="impTitle">
+    <h3 id="impTitle">교인 명부에서 가져오기</h3>
+    <div id="impBody"></div>
+    <div class="err" id="impErr"></div>
+    <div class="modal-actions" id="impActions"></div>
+  </div>
 </div>
 
 <div class="loading" id="loading">불러오는 중…</div>
@@ -1208,7 +1226,7 @@ $('yearSel').addEventListener('change', async (e) => {
 function openModal(id) { $(id).classList.add('open'); }
 function closeModal(id) { $(id).classList.remove('open'); }
 document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => closeModal(b.dataset.close)));
-document.querySelectorAll('.modal-bg').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModal(m.id); }));
+document.querySelectorAll('.modal-bg').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m && !(m.id === 'importModal' && importBusy)) closeModal(m.id); }));
 
 $('newYearBtn').addEventListener('click', () => {
   const max = Math.max(...state.years, state.year || new Date().getFullYear());
@@ -1603,10 +1621,33 @@ function buildAgeGroups(members, base) {
   return { groups, genderGroups, active, excluded, genderCount };
 }
 let ageNote = '';
-$('ageImportBtn').addEventListener('click', async () => {
-  const base = defaultAgeBase(state.year);   // 항상 그 해 12월 31일 기준
-  if (state.age.groups.some((g) => g.names.trim()) && !confirm(`${state.year}년 연령별 명단을 교인 명부 기준(${base})으로 새로 만들까요?\n직접 고친 내용은 바뀝니다.`)) return;
-  setLoading(true, '교인 명부 불러오는 중…');
+function fmtKDate(d) { return String(d).replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_, y, mo, dd) => `${y}년 ${+mo}월 ${+dd}일`); }
+let importBusy = false;
+function impActions(html) { $('impActions').innerHTML = html; }
+function openImportModal() {
+  const base = defaultAgeBase(state.year);
+  const has = state.age.groups.some((g) => g.names.trim());
+  $('impErr').textContent = '';
+  $('impBody').innerHTML = `
+    <div class="imp-list">
+      대상 연도: <b>${state.year}년</b><br>
+      기준일: <b>${fmtKDate(base)}</b> (만 나이)<br>
+      해지 교인(해지일·해지 사유 입력)은 <b>제외</b><br>
+      전체 명단과 <b>남녀 구분 명단</b>을 함께 만듭니다
+    </div>
+    ${has ? `<div class="imp-warn">⚠ ${state.year}년 명단이 이미 있습니다. 가져오면 직접 고친 내용까지 새 명단으로 바뀝니다.</div>` : ''}`;
+  impActions(`<button class="btn" type="button" data-close="importModal">취소</button>
+    <button class="btn primary" type="button" id="impGo">가져오기</button>`);
+  openModal('importModal');
+  setTimeout(() => $('impGo') && $('impGo').focus(), 50);
+}
+async function runImport() {
+  if (importBusy) return;
+  importBusy = true;
+  const base = defaultAgeBase(state.year);
+  $('impErr').textContent = '';
+  $('impBody').innerHTML = '<div class="imp-spin">교인 명부를 불러오는 중입니다…</div>';
+  impActions('');
   try {
     const members = await apiMembers();
     const r = buildAgeGroups(members, base);
@@ -1614,12 +1655,32 @@ $('ageImportBtn').addEventListener('click', async () => {
     const gc = r.genderCount;
     ageNote = `교인 명부 ${r.active + r.excluded}명 중 해지 ${r.excluded}명을 빼고 ${r.active}명을 나눴습니다. ` +
       (gc.field ? `성별: 남 ${gc.남}명 · 여 ${gc.여}명 · 미입력 ${gc.none}명.`
-                : `⚠ 교인 명부 서버가 성별(gender)을 보내지 않아 남녀 구분 명단을 나눌 수 없습니다. 교인 명부 Apps Script가 성별 열을 내보내는지 확인해 주세요.`);
+                : `⚠ 교인 명부 서버가 성별(gender)을 보내지 않아 남녀 구분 명단을 나눌 수 없습니다.`);
     setDirty(true); renderAge();
-    toast(`연령별 명단을 만들었습니다 (총 ${r.active}명). [저장]을 눌러 기록하세요.`);
+    $('impBody').innerHTML = `
+      <div class="imp-ok">✓ ${state.year}년 연령별 명단을 만들었습니다.</div>
+      <div class="imp-list">
+        교인 명부: <b>${r.active + r.excluded}</b>명<br>
+        해지 제외: <b>${r.excluded}</b>명<br>
+        연령별 명단: <b>총 ${r.active}명</b><br>
+        ${gc.field ? `성별: 남 <b>${gc.남}</b>명 · 여 <b>${gc.여}</b>명 · 미입력 <b>${gc.none}</b>명` : '⚠ 교인 명부에 성별 자료가 없어 남녀 구분을 할 수 없습니다.'}
+      </div>
+      ${gc.field && gc.none ? `<div class="imp-warn">성별 미입력 교인은 남녀 구분 명단의 '성별 미입력' 줄에 모입니다.</div>` : ''}
+      <div style="font-size:13px;color:var(--muted)">위쪽 <b>[저장]</b>을 눌러야 시트에 기록됩니다.</div>`;
+    impActions(`<button class="btn primary" type="button" id="impClose" data-close="importModal">확인</button>`);
   } catch (err) {
-    toast(err.message, true);
-  } finally { setLoading(false); }
+    $('impBody').innerHTML = '';
+    $('impErr').textContent = err.message;
+    impActions(`<button class="btn" type="button" data-close="importModal">닫기</button>
+      <button class="btn primary" type="button" id="impGo">다시 시도</button>`);
+  } finally { importBusy = false; }
+}
+$('ageImportBtn').addEventListener('click', openImportModal);
+$('importModal').addEventListener('click', (e) => {
+  if (e.target.closest('#impGo')) { runImport(); return; }
+  const c = e.target.closest('[data-close]');
+  if (c && !importBusy) closeModal('importModal');
+  if (e.target === $('importModal') && !importBusy) closeModal('importModal');
 });
 function ageTotal() { return state.age.groups.reduce((n, g) => n + countNames(g.names), 0); }
 function updateAgeTotal() {
@@ -1678,7 +1739,7 @@ function renderAgeDoc() {
       ${toggleBar}
       <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
       <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
-      gs.map((g) => `<tr><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
+      ageBandShade(gs).map(([g, alt]) => `<tr${alt ? ' class="alt"' : ''}><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
       `<tr class="tot"><td class="l">합계</td><td class="c">${totalAll}</td><td></td></tr></tbody></table>`;
   } else if (!gg.length) {
     $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단 (남녀 구분)</h1>${toggleBar}
