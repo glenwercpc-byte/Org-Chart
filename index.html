@@ -1558,11 +1558,20 @@ const AGE_GENDER_BANDS = [
   ['20-29', '20-29', null],
 ];
 
+const AGE_NOGENDER = '성별 미입력';
+function normGender(v) {
+  const s = String(v == null ? '' : v).trim().toLowerCase();
+  if (!s) return '';
+  if (/^(남|남자|남성|m|male)$/.test(s)) return '남';
+  if (/^(여|여자|여성|f|female)$/.test(s)) return '여';
+  return '';
+}
 function buildAgeGroups(members, base) {
   const buckets = {}, all = AGE_BANDS.map((b) => b[0]).concat([AGE_YOUNG, AGE_NODATA]);
   all.forEach((l) => (buckets[l] = []));
   // gender buckets: key = bandLabel + '|' + gender ('남'|'여'|'통합')
-  const gbuckets = {};
+  const gbuckets = {}, gextra = { [AGE_YOUNG]: [], [AGE_NODATA]: [], [AGE_NOGENDER]: [] };
+  const genderCount = { 남: 0, 여: 0, none: 0, field: false };
   AGE_GENDER_BANDS.forEach(([label]) => (gbuckets[label] = []));
   let active = 0, excluded = 0;
   members.forEach((m) => {
@@ -1574,18 +1583,23 @@ function buildAgeGroups(members, base) {
     const a = b ? ageAt(b, base) : NaN;
     const band = b && a >= 0 && a < 130 ? bandOf(a) : AGE_NODATA;
     buckets[band].push(name);
-    // gender split
-    const gender = String(m.gender || '').trim(); // '남' or '여'
-    AGE_GENDER_BANDS.forEach(([label, bandLabel, g]) => {
-      if (bandLabel !== band) return;
-      if (g === null || g === gender) gbuckets[label].push(name);
-    });
+    // 남녀 구분: 남/여 로 나누는 연령대인데 성별이 비어 있으면 '성별 미입력'으로 모음 (빠지는 사람 없게)
+    const gender = normGender(m.gender);
+    if (gender) genderCount[gender]++; else genderCount.none++;
+    if ('gender' in m) genderCount.field = true;
+    const rows = AGE_GENDER_BANDS.filter(([, bandLabel]) => bandLabel === band);
+    if (!rows.length) gextra[band].push(name);                       // 20세 미만 · 자료없음
+    else if (rows.some(([, , g]) => g === null)) gbuckets[rows[0][0]].push(name);
+    else if (gender) gbuckets[band + gender].push(name);
+    else gextra[AGE_NOGENDER].push(`${name}(${band})`);
   });
   const sort = (arr) => arr.sort((x, y) => x.localeCompare(y, 'ko'));
   const groups = all.filter((l) => l !== AGE_YOUNG || buckets[l].length)
     .map((l) => ({ label: l, names: sort(buckets[l]).join(', ') }));
-  const genderGroups = AGE_GENDER_BANDS.map(([label]) => ({ label, names: sort(gbuckets[label]).join(', ') }));
-  return { groups, genderGroups, active, excluded };
+  const genderGroups = AGE_GENDER_BANDS.map(([label]) => ({ label, names: sort(gbuckets[label]).join(', ') }))
+    .concat([AGE_YOUNG, AGE_NODATA, AGE_NOGENDER].filter((l) => l === AGE_NODATA || gextra[l].length)
+      .map((label) => ({ label, names: sort(gextra[label]).join(', ') })));
+  return { groups, genderGroups, active, excluded, genderCount };
 }
 let ageNote = '';
 $('ageImportBtn').addEventListener('click', async () => {
@@ -1596,7 +1610,10 @@ $('ageImportBtn').addEventListener('click', async () => {
     const members = await apiMembers();
     const r = buildAgeGroups(members, base);
     state.age = { base, groups: r.groups, genderGroups: r.genderGroups };
-    ageNote = `교인 명부 ${r.active + r.excluded}명 중 해지 ${r.excluded}명을 빼고 ${r.active}명을 나눴습니다.`;
+    const gc = r.genderCount;
+    ageNote = `교인 명부 ${r.active + r.excluded}명 중 해지 ${r.excluded}명을 빼고 ${r.active}명을 나눴습니다. ` +
+      (gc.field ? `성별: 남 ${gc.남}명 · 여 ${gc.여}명 · 미입력 ${gc.none}명.`
+                : `⚠ 교인 명부 서버가 성별(gender)을 보내지 않아 남녀 구분 명단을 나눌 수 없습니다. 교인 명부 Apps Script가 성별 열을 내보내는지 확인해 주세요.`);
     setDirty(true); renderAge();
     toast(`연령별 명단을 만들었습니다 (총 ${r.active}명). [저장]을 눌러 기록하세요.`);
   } catch (err) {
@@ -1662,6 +1679,9 @@ function renderAgeDoc() {
       <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
       gs.map((g) => `<tr><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
       `<tr class="tot"><td class="l">합계</td><td class="c">${totalAll}</td><td></td></tr></tbody></table>`;
+  } else if (!gg.length) {
+    $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단 (남녀 구분)</h1>${toggleBar}
+      <div class="empty">${state.year}년 남녀 구분 명단이 저장되어 있지 않습니다.<br>'연령별 명단' 탭에서 <b>[교인 명부에서 가져오기]</b>를 누른 뒤 [저장]해 주세요.</div>`;
   } else {
     $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단 (남녀 구분)</h1>
       <div class="adoc-sub">${base ? `기준일 ${base} (만 나이) · ` : ''}총 ${totalGender}명</div>
