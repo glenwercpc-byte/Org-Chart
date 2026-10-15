@@ -292,6 +292,7 @@
   table.adoc td.l, table.adoc td.c { text-align: center; white-space: nowrap; font-weight: 700; }
   table.adoc td.n { line-height: 1.6; }
   table.adoc tr { break-inside: avoid; }
+  table.adoc tr.alt td { background: #e8f2fc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   table.adoc tr.tot td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .adoc-sub { text-align: center; color: #555; font-size: 12px; margin: -4px 0 10px; }
   .adoc-toggle { text-align: center; margin: 0 0 10px; }
@@ -429,7 +430,7 @@
     </div>
     <div class="age-bar">
       <label class="f" for="ageBase">기준일</label>
-      <input class="inp" type="date" id="ageBase">
+      <input class="inp" type="date" id="ageBase" readonly title="그 해 12월 31일 기준 만 나이">
       <span class="age-info" id="ageTotal" style="margin:0"></span>
     </div>
     <div class="age-info" id="ageInfo"></div>
@@ -1603,7 +1604,7 @@ function buildAgeGroups(members, base) {
 }
 let ageNote = '';
 $('ageImportBtn').addEventListener('click', async () => {
-  const base = $('ageBase').value || state.age.base || defaultAgeBase(state.year);
+  const base = defaultAgeBase(state.year);   // 항상 그 해 12월 31일 기준
   if (state.age.groups.some((g) => g.names.trim()) && !confirm(`${state.year}년 연령별 명단을 교인 명부 기준(${base})으로 새로 만들까요?\n직접 고친 내용은 바뀝니다.`)) return;
   setLoading(true, '교인 명부 불러오는 중…');
   try {
@@ -1620,10 +1621,6 @@ $('ageImportBtn').addEventListener('click', async () => {
     toast(err.message, true);
   } finally { setLoading(false); }
 });
-$('ageBase').addEventListener('change', (e) => {
-  state.age.base = e.target.value; setDirty(true);
-  if (state.age.groups.length) $('ageInfo').innerHTML = `기준일을 바꿨습니다. 나이를 다시 계산하려면 <b>[교인 명부에서 가져오기]</b>를 누르세요.`;
-});
 function ageTotal() { return state.age.groups.reduce((n, g) => n + countNames(g.names), 0); }
 function updateAgeTotal() {
   const n = ageTotal();
@@ -1632,8 +1629,12 @@ function updateAgeTotal() {
   if (t) t.textContent = n + '명';
 }
 function renderAge() {
-  $('ageBase').value = state.age.base || defaultAgeBase(state.year);
-  $('ageInfo').innerHTML = ageNote ? esc(ageNote) : (state.age.groups.length ? '' : `${state.year}년 명단이 아직 없습니다. <b>[교인 명부에서 가져오기]</b>를 누르면 생년월일로 연령대를 나눕니다.`);
+  const want = defaultAgeBase(state.year);
+  $('ageBase').value = want;
+  const stale = state.age.groups.length && state.age.base && state.age.base !== want;
+  $('ageInfo').innerHTML = ageNote ? esc(ageNote) : stale
+    ? `⚠ 저장된 명단은 <b>${esc(state.age.base)}</b> 기준으로 만든 것입니다. <b>[교인 명부에서 가져오기]</b>를 누른 뒤 [저장]하면 ${want} 기준으로 다시 만들어집니다.`
+    : (state.age.groups.length ? '' : `${state.year}년 명단이 아직 없습니다. <b>[교인 명부에서 가져오기]</b>를 누르면 생년월일로 연령대를 나눕니다.`);
   ageNote = '';
   if (!state.age.groups.length) { $('ageList').innerHTML = ''; $('ageTotal').innerHTML = ''; return; }
   $('ageList').innerHTML = `<div class="age-row head"><div>연령대</div><div>인원</div><div>명단</div></div>` +
@@ -1688,9 +1689,18 @@ function renderAgeDoc() {
       ${toggleBar}
       <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
       <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
-      gg.map((g) => `<tr><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
+      ageBandShade(gg).map(([g, alt]) => `<tr${alt ? ' class="alt"' : ''}><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
       `<tr class="tot"><td class="l">합계</td><td class="c">${totalGender}</td><td></td></tr></tbody></table>`;
   }
+}
+// 같은 연령대(예: 85-89남·85-89여)는 한 묶음 — 묶음마다 흰색/연한 파랑을 번갈아 (90세 이상=흰색, 85-89=파랑, 80-84=흰색 …)
+function ageBandShade(list) {
+  let k = -1, prev = null;
+  return list.map((g) => {
+    const band = String(g.label).replace(/[남여]$/, '');
+    if (band !== prev) { k++; prev = band; }
+    return [g, k % 2 === 1];
+  });
 }
 function setAgeDocMode(mode) { _ageDocMode = mode; renderAgeDoc(); }
 
