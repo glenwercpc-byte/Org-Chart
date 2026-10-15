@@ -294,6 +294,10 @@
   table.adoc tr { break-inside: avoid; }
   table.adoc tr.tot td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .adoc-sub { text-align: center; color: #555; font-size: 12px; margin: -4px 0 10px; }
+  .adoc-toggle { text-align: center; margin: 0 0 10px; }
+  .adoc-tog { padding: 5px 16px; margin: 0 4px; border: 1px solid #aaa; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 13px; }
+  .adoc-tog.active { background: #4a6fa5; color: #fff; border-color: #4a6fa5; font-weight: 700; }
+  @media print { .no-print { display: none !important; } }
 
   @media (max-width: 720px) {
     body { font-size: 14px; }
@@ -1485,14 +1489,16 @@ const DEMO_MEMBERS = [
 ].map(([name, birthDate, terminationDate, terminationReason]) => ({ name, birthDate, terminationDate: terminationDate || '', terminationReason: terminationReason || '' }));
 
 function normAge(a) {
-  return { base: (a && a.base) || '', groups: ((a && a.groups) || []).map((g) => ({ label: g.label || '', names: g.names || '' })) };
+  return {
+    base: (a && a.base) || '',
+    groups: ((a && a.groups) || []).map((g) => ({ label: g.label || '', names: g.names || '' })),
+    genderGroups: ((a && a.genderGroups) || []).map((g) => ({ label: g.label || '', names: g.names || '' }))
+  };
 }
 const pad2 = (n) => String(n).padStart(2, '0');
 function ymd(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
 function defaultAgeBase(year) {
-  const now = new Date(), cy = now.getFullYear();
-  if (year === cy) return ymd(now);
-  return year > cy ? `${year}-01-01` : `${year}-12-31`;
+  return `${year}-12-31`;
 }
 // 생년월일 문자열 → {y,m,d} (YYYY-MM-DD, ISO 시각 포함, MM-DD-YYYY, M/D/YYYY, 연도만)
 function parseBirth(v) {
@@ -1537,9 +1543,27 @@ async function apiMembers() {
     throw new Error('교인 명부에 연결할 수 없습니다. (' + (err.name === 'AbortError' ? '시간 초과' : err.message) + ')');
   } finally { clearTimeout(t); }
 }
+// 남녀 구분 명단 그룹 정의: [label, bandLabel, gender] (gender: '남'|'여'|null=통합)
+const AGE_GENDER_BANDS = [
+  ['90세 이상', '90세 이상', null],
+  ['85-89남', '85-89', '남'], ['85-89여', '85-89', '여'],
+  ['80-84남', '80-84', '남'], ['80-84여', '80-84', '여'],
+  ['75-79남', '75-79', '남'], ['75-79여', '75-79', '여'],
+  ['70-74남', '70-74', '남'], ['70-74여', '70-74', '여'],
+  ['65-69남', '65-69', '남'], ['65-69여', '65-69', '여'],
+  ['60-64남', '60-64', '남'], ['60-64여', '60-64', '여'],
+  ['50-59남', '50-59', '남'], ['50-59여', '50-59', '여'],
+  ['40-49남', '40-49', '남'], ['40-49여', '40-49', '여'],
+  ['30-39', '30-39', null],
+  ['20-29', '20-29', null],
+];
+
 function buildAgeGroups(members, base) {
   const buckets = {}, all = AGE_BANDS.map((b) => b[0]).concat([AGE_YOUNG, AGE_NODATA]);
   all.forEach((l) => (buckets[l] = []));
+  // gender buckets: key = bandLabel + '|' + gender ('남'|'여'|'통합')
+  const gbuckets = {};
+  AGE_GENDER_BANDS.forEach(([label]) => (gbuckets[label] = []));
   let active = 0, excluded = 0;
   members.forEach((m) => {
     const name = String(m.name || '').trim();
@@ -1548,11 +1572,20 @@ function buildAgeGroups(members, base) {
     active++;
     const b = parseBirth(m.birthDate);
     const a = b ? ageAt(b, base) : NaN;
-    buckets[b && a >= 0 && a < 130 ? bandOf(a) : AGE_NODATA].push(name);
+    const band = b && a >= 0 && a < 130 ? bandOf(a) : AGE_NODATA;
+    buckets[band].push(name);
+    // gender split
+    const gender = String(m.gender || '').trim(); // '남' or '여'
+    AGE_GENDER_BANDS.forEach(([label, bandLabel, g]) => {
+      if (bandLabel !== band) return;
+      if (g === null || g === gender) gbuckets[label].push(name);
+    });
   });
+  const sort = (arr) => arr.sort((x, y) => x.localeCompare(y, 'ko'));
   const groups = all.filter((l) => l !== AGE_YOUNG || buckets[l].length)
-    .map((l) => ({ label: l, names: buckets[l].sort((x, y) => x.localeCompare(y, 'ko')).join(', ') }));
-  return { groups, active, excluded };
+    .map((l) => ({ label: l, names: sort(buckets[l]).join(', ') }));
+  const genderGroups = AGE_GENDER_BANDS.map(([label]) => ({ label, names: sort(gbuckets[label]).join(', ') }));
+  return { groups, genderGroups, active, excluded };
 }
 let ageNote = '';
 $('ageImportBtn').addEventListener('click', async () => {
@@ -1562,7 +1595,7 @@ $('ageImportBtn').addEventListener('click', async () => {
   try {
     const members = await apiMembers();
     const r = buildAgeGroups(members, base);
-    state.age = { base, groups: r.groups };
+    state.age = { base, groups: r.groups, genderGroups: r.genderGroups };
     ageNote = `교인 명부 ${r.active + r.excluded}명 중 해지 ${r.excluded}명을 빼고 ${r.active}명을 나눴습니다.`;
     setDirty(true); renderAge();
     toast(`연령별 명단을 만들었습니다 (총 ${r.active}명). [저장]을 눌러 기록하세요.`);
@@ -1607,18 +1640,39 @@ $('view-age').addEventListener('change', (e) => {
   });
 });
 
+let _ageDocMode = 'all'; // 'all' | 'gender'
 function renderAgeDoc() {
   $('pageStyle').textContent = '@page { size: letter portrait; margin: 12mm; }';
-  const gs = state.age.groups;
+  const gs = state.age.groups, gg = state.age.genderGroups || [];
   if (!gs.length) { $('ageSheet').innerHTML = '<div class="empty">연령별 명단이 없습니다. \'연령별 명단\' 탭에서 만들어 주세요.</div>'; return; }
-  const base = state.age.base ? state.age.base.replace(/^(\d{4})-(\d{2})-(\d{2})$/, (m, y, mo, d) => `${y}년 ${+mo}월 ${+d}일`) : '';
-  $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단</h1>
-    <div class="adoc-sub">${base ? `기준일 ${base} (만 나이) · ` : ''}총 ${ageTotal()}명</div>
-    <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
-    <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
-    gs.map((g) => `<tr><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
-    `<tr class="tot"><td class="l">합계</td><td class="c">${ageTotal()}</td><td></td></tr></tbody></table>`;
+  const base = state.age.base ? state.age.base.replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_, y, mo, d) => `${y}년 ${+mo}월 ${+d}일`) : '';
+  const totalAll = ageTotal();
+  const totalGender = gg.reduce((n, g) => n + countNames(g.names), 0);
+
+  const toggleBar = `<div class="adoc-toggle no-print">
+    <button type="button" class="adoc-tog${_ageDocMode === 'all' ? ' active' : ''}" onclick="setAgeDocMode('all')">전체 명단</button>
+    <button type="button" class="adoc-tog${_ageDocMode === 'gender' ? ' active' : ''}" onclick="setAgeDocMode('gender')">남녀 구분 명단</button>
+  </div>`;
+
+  if (_ageDocMode === 'all') {
+    $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단</h1>
+      <div class="adoc-sub">${base ? `기준일 ${base} (만 나이) · ` : ''}총 ${totalAll}명</div>
+      ${toggleBar}
+      <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
+      <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
+      gs.map((g) => `<tr><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
+      `<tr class="tot"><td class="l">합계</td><td class="c">${totalAll}</td><td></td></tr></tbody></table>`;
+  } else {
+    $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단 (남녀 구분)</h1>
+      <div class="adoc-sub">${base ? `기준일 ${base} (만 나이) · ` : ''}총 ${totalGender}명</div>
+      ${toggleBar}
+      <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
+      <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
+      gg.map((g) => `<tr><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
+      `<tr class="tot"><td class="l">합계</td><td class="c">${totalGender}</td><td></td></tr></tbody></table>`;
+  }
 }
+function setAgeDocMode(mode) { _ageDocMode = mode; renderAgeDoc(); }
 
 /* ---------- 시작 ---------- */
 (async function init() {
@@ -1630,6 +1684,17 @@ function renderAgeDoc() {
     const y = state.years[0] || new Date().getFullYear();
     await loadYear(y);
     await loadHistory();
+    const _urlMode = new URLSearchParams(location.search).get('mode');
+    if (_urlMode === 'view' || _urlMode === 'admin') {
+      document.querySelectorAll('button.tab[data-view]').forEach((t) => {
+        if (t.getAttribute('data-view') === 'preview') t.click();
+      });
+      setTimeout(() => {
+        document.querySelectorAll('[data-pv]').forEach((b) => {
+          if (b.getAttribute('data-pv') === 'table') b.click();
+        });
+      }, 150);
+    }
   } catch (err) {
     $('banner').innerHTML = `<div class="banner error">${esc(err.message)} — API_URL 과 웹 앱 배포 설정(액세스: 모든 사용자)을 확인해 주세요.</div>`;
     state.year = new Date().getFullYear(); renderAll();
