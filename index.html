@@ -349,19 +349,19 @@
     <button class="btn primary" id="saveBtn" type="button">저장</button>
   </div>
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" data-view="gigu" aria-selected="true">기구·위원회</button>
+    <button class="tab" role="tab" data-view="gigu" aria-selected="false">기구·위원회</button>
     <button class="tab" role="tab" data-view="buseo" aria-selected="false">팀·부서</button>
     <button class="tab" role="tab" data-view="org" aria-selected="false">교회 조직도</button>
     <button class="tab" role="tab" data-view="hist" aria-selected="false">교회 연혁</button>
     <button class="tab" role="tab" data-view="age" aria-selected="false">연령별 명단</button>
-    <button class="tab" role="tab" data-view="preview" aria-selected="false">미리보기·인쇄</button>
+    <button class="tab" role="tab" data-view="preview" aria-selected="true">미리보기·인쇄</button>
   </nav>
 </header>
 
 <main>
   <div id="banner"></div>
 
-  <section id="view-gigu">
+  <section id="view-gigu" hidden>
     <div class="section-head">
       <h2>기구·위원회</h2>
       <p>직책이 없으면 직책 칸을 비워 두세요. 이름이 여러 명이면 쉼표로 구분합니다.</p>
@@ -432,7 +432,7 @@
     <div class="age-table" id="ageList"></div>
   </section>
 
-  <section id="view-preview" hidden>
+  <section id="view-preview">
     <div class="preview-tools">
       <div class="seg" role="group" aria-label="미리보기 종류">
         <button type="button" data-pv="table" aria-pressed="true">부서조직표</button>
@@ -541,7 +541,7 @@ const ORG_ZONES = [
 const emptyOrg = () => ({ top: [], left: [], right: [], teams: [], bottom: [] });
 
 const emptyAge = () => ({ base: '', groups: [] });
-const state = { year: null, years: [], gigu: [], buseo: [], org: emptyOrg(), age: emptyAge(), dirty: false, view: 'gigu', pv: 'table', hist: [], histDirty: false, histLoaded: false };
+const state = { year: null, years: [], gigu: [], buseo: [], org: emptyOrg(), age: emptyAge(), dirty: false, view: 'preview', pv: 'table', hist: [], histDirty: false, histLoaded: false };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
