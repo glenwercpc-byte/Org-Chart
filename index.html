@@ -302,6 +302,7 @@
   table.adoc td.n { line-height: 1.6; }
   table.adoc tr { break-inside: avoid; }
   table.adoc tr.alt td { background: #e8f2fc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table.adoc tr.sub td, .age-row.sub .al, .age-row.sub .ac { color: #1b5e20; }
   table.adoc tr.sub td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   table.adoc tr.tot td, .age-row.total .al, .age-row.total .ac { color: #1a56c4; }
   table.adoc tr.tot td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1515,11 +1516,20 @@ const DEMO_MEMBERS = [
   ['교인을', '1999-11-11'], ['교인병', ''], ['교인정', '1948-05-05', '2025-03-01', '이사']
 ].map(([name, birthDate, terminationDate, terminationReason]) => ({ name, birthDate, terminationDate: terminationDate || '', terminationReason: terminationReason || '' }));
 
+// 예전에 맨 아래 저장된 '자료없음' 줄을 20-29 바로 아래로 옮김
+function noDataAfterBands(list) {
+  const k = list.findIndex((g) => g.label === AGE_NODATA);
+  if (k < 0) return list;
+  const [nd] = list.splice(k, 1);
+  const last = list.reduce((j, g, i) => (isAgeBandRow(g) ? i : j), -1);
+  list.splice(last + 1, 0, nd);
+  return list;
+}
 function normAge(a) {
   return {
     base: (a && a.base) || '',
-    groups: ((a && a.groups) || []).map((g) => ({ label: g.label || '', names: g.names || '' })),
-    genderGroups: ((a && a.genderGroups) || []).map((g) => ({ label: g.label || '', names: g.names || '' }))
+    groups: noDataAfterBands(((a && a.groups) || []).map((g) => ({ label: g.label || '', names: g.names || '' }))),
+    genderGroups: noDataAfterBands(((a && a.genderGroups) || []).map((g) => ({ label: g.label || '', names: g.names || '' })))
   };
 }
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -1632,7 +1642,7 @@ async function apiWeeklyStatus() {
 const DEMO_STATUS = [{ name: '교인나', tag: '환우' }, { name: '교인카', tag: '타주' }, { name: '교인파', tag: '한국' }];
 
 function buildAgeGroups(members, base, status) {
-  const buckets = {}, all = AGE_BANDS.map((b) => b[0]).concat([AGE_SICK, AGE_AWAY, AGE_YOUNG, AGE_NODATA]);
+  const buckets = {}, all = AGE_BANDS.map((b) => b[0]).concat([AGE_NODATA, AGE_SICK, AGE_AWAY, AGE_YOUNG]);
   all.forEach((l) => (buckets[l] = []));
   const gbuckets = {}, gextra = { [AGE_SICK]: [], [AGE_AWAY]: [], [AGE_YOUNG]: [], [AGE_NODATA]: [], [AGE_NOGENDER]: [] };
   const genderCount = { 남: 0, 여: 0, none: 0, field: false };
@@ -1679,7 +1689,7 @@ function buildAgeGroups(members, base, status) {
   const groups = all.filter((l) => l !== AGE_YOUNG || buckets[l].length)
     .map((l) => ({ label: l, names: sort(buckets[l]).join(', ') }));
   const genderGroups = AGE_GENDER_BANDS.map(([label]) => ({ label, names: sort(gbuckets[label]).join(', ') }))
-    .concat([AGE_SICK, AGE_AWAY, AGE_YOUNG, AGE_NODATA, AGE_NOGENDER]
+    .concat([AGE_NODATA, AGE_SICK, AGE_AWAY, AGE_YOUNG, AGE_NOGENDER]
       .filter((l) => l === AGE_SICK || l === AGE_AWAY || l === AGE_NODATA || gextra[l].length)
       .map((label) => ({ label, names: sort(gextra[label]).join(', ') })));
   return { groups, genderGroups, active: active + unmatched.length, registered: active + excluded, excluded, genderCount, sick, away, unmatched };
@@ -1770,7 +1780,7 @@ function renderAge() {
     : (state.age.groups.length ? '' : `${state.year}년 명단이 아직 없습니다. <b>[교인 명부에서 가져오기]</b>를 누르면 생년월일로 연령대를 나눕니다.`);
   ageNote = '';
   if (!state.age.groups.length) { $('ageList').innerHTML = ''; $('ageTotal').innerHTML = ''; return; }
-  const lastBand = state.age.groups.reduce((k, g, i) => (isAgeBandRow(g) ? i : k), -1);
+  const lastBand = state.age.groups.reduce((k, g, i) => (isAttendRow(g) ? i : k), -1);
   $('ageList').innerHTML = `<div class="age-row head"><div>연령대</div><div>인원</div><div>명단</div></div>` +
     state.age.groups.map((g, i) => `
     <div class="age-row${g.label === AGE_NODATA ? ' nodata' : ''}">
@@ -1829,11 +1839,12 @@ function renderAgeDoc() {
 function ageLabel(l) { return String(l).replace(/^(\d+-\d+)\s*([남여])$/, '$1 $2'); }
 const AGE_BAND_SET = new Set(AGE_BANDS.map((b) => b[0]));
 function isAgeBandRow(g) { return AGE_BAND_SET.has(ageLabel(g.label).replace(/\s[남여]$/, '')); }
-// 출석 교인 합계 = 90세 이상 ~ 20-29 (환우·장기 결석·20세 미만·자료없음 제외)
-function attendSum(list) { return list.filter(isAgeBandRow).reduce((n, g) => n + countNames(g.names), 0); }
+// 출석 교인 합계 = 90세 이상 ~ 20-29 + 자료없음 (환우·장기 결석·20세 미만 제외)
+function isAttendRow(g) { return isAgeBandRow(g) || g.label === AGE_NODATA; }
+function attendSum(list) { return list.filter(isAttendRow).reduce((n, g) => n + countNames(g.names), 0); }
 // 표 본문: 연령대 줄 → (마지막 연령대 줄 다음) 출석 교인 합계 → 나머지 줄 → 총 인원 합계
 function ageDocBody(list) {
-  const last = list.reduce((k, g, i) => (isAgeBandRow(g) ? i : k), -1);
+  const last = list.reduce((k, g, i) => (isAttendRow(g) ? i : k), -1);
   let html = '';
   ageBandShade(list).forEach(([g, alt], i) => {
     html += `<tr${alt ? ' class="alt"' : ''}><td class="l">${esc(ageLabel(g.label))}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`;
