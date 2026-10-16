@@ -293,7 +293,8 @@
   .age-row.head { background: var(--navy); color: #fff; font-weight: 700; font-size: 13px; }
   .age-row.head > div { background: transparent; color: #fff; display: flex; align-items: center; justify-content: center; border-color: rgba(255,255,255,.15); }
   .age-row.nodata .al { color: #8a6d1f; }
-  .age-row.total { background: #f7f8fb; font-weight: 700; }
+  .age-row.total, .age-row.sub { background: #f3f4f7; font-weight: 700; }
+  .age-row.sub .al, .age-row.total .al { font-size: 12.5px; white-space: nowrap; }
   table.adoc { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   table.adoc th, table.adoc td { border: 1px solid #999; padding: 5px 8px; vertical-align: middle; }
   table.adoc th { background: #e3e3e3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -301,6 +302,8 @@
   table.adoc td.n { line-height: 1.6; }
   table.adoc tr { break-inside: avoid; }
   table.adoc tr.alt td { background: #e8f2fc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table.adoc tr.sub td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  table.adoc tr.tot td, .age-row.total .al, .age-row.total .ac { color: #1a56c4; }
   table.adoc tr.tot td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .adoc-sub { text-align: center; color: #555; font-size: 12px; margin: -4px 0 10px; }
   .adoc-toggle { text-align: center; margin: 0 0 10px; }
@@ -326,6 +329,7 @@
     .hgrid { grid-template-columns: 90px 1fr; }
     .age-row { grid-template-columns: 76px 44px 1fr; }
     .age-row .al { white-space: nowrap; font-size: 12.5px; padding: 6px 2px; }
+    .age-row.sub .al, .age-row.total .al { white-space: normal; text-align: center; font-size: 12px; }
     .age-row > div { padding: 6px; }
     .row-labels { display: none; }
     .row, .row.grp { padding-bottom: 8px; border-bottom: 1px solid #f0f1f4; }
@@ -430,7 +434,7 @@
     <div class="org-toolbar">
       <div>
         <h2>연령별 명단</h2>
-        <p>교인 명부의 생년월일로 연령대를 나눕니다(해지 교인 제외, 만 나이). 주일예배 출석현황의 환우·장기 결석(타교·타주·한국·귀국·장결) 교인은 따로 모읍니다. 가져온 뒤 명단을 직접 고칠 수 있고, 연도별로 저장됩니다.</p>
+        <p>교인 명부의 생년월일로 연령대를 나눕니다(해지 교인 제외, 만 나이).</p>
       </div>
       <div class="org-actions">
         <button class="btn primary" type="button" id="ageImportBtn">교인 명부에서 가져오기</button>
@@ -1569,14 +1573,14 @@ async function apiMembers() {
 // 남녀 구분 명단 그룹 정의: [label, bandLabel, gender] (gender: '남'|'여'|null=통합)
 const AGE_GENDER_BANDS = [
   ['90세 이상', '90세 이상', null],
-  ['85-89남', '85-89', '남'], ['85-89여', '85-89', '여'],
-  ['80-84남', '80-84', '남'], ['80-84여', '80-84', '여'],
-  ['75-79남', '75-79', '남'], ['75-79여', '75-79', '여'],
-  ['70-74남', '70-74', '남'], ['70-74여', '70-74', '여'],
-  ['65-69남', '65-69', '남'], ['65-69여', '65-69', '여'],
-  ['60-64남', '60-64', '남'], ['60-64여', '60-64', '여'],
-  ['50-59남', '50-59', '남'], ['50-59여', '50-59', '여'],
-  ['40-49남', '40-49', '남'], ['40-49여', '40-49', '여'],
+  ['85-89 남', '85-89', '남'], ['85-89 여', '85-89', '여'],
+  ['80-84 남', '80-84', '남'], ['80-84 여', '80-84', '여'],
+  ['75-79 남', '75-79', '남'], ['75-79 여', '75-79', '여'],
+  ['70-74 남', '70-74', '남'], ['70-74 여', '70-74', '여'],
+  ['65-69 남', '65-69', '남'], ['65-69 여', '65-69', '여'],
+  ['60-64 남', '60-64', '남'], ['60-64 여', '60-64', '여'],
+  ['50-59 남', '50-59', '남'], ['50-59 여', '50-59', '여'],
+  ['40-49 남', '40-49', '남'], ['40-49 여', '40-49', '여'],
   ['30-39', '30-39', null],
   ['20-29', '20-29', null],
 ];
@@ -1662,7 +1666,7 @@ function buildAgeGroups(members, base, status) {
     const rows = AGE_GENDER_BANDS.filter(([, bandLabel]) => bandLabel === band);
     if (!rows.length) gextra[band].push(name);                       // 20세 미만 · 자료없음
     else if (rows.some(([, , g]) => g === null)) gbuckets[rows[0][0]].push(name);
-    else if (gender) gbuckets[band + gender].push(name);
+    else if (gender) gbuckets[band + ' ' + gender].push(name);
     else gextra[AGE_NOGENDER].push(`${name}(${band})`);
   });
   // 출석현황에는 있는데 교인 명부(해지 제외)에서 찾지 못한 이름 — 그래도 칸에는 넣고 따로 알려 줌
@@ -1754,6 +1758,8 @@ function updateAgeTotal() {
   $('ageTotal').innerHTML = state.age.groups.length ? `총 <b>${n}</b>명` : '';
   const t = $('ageList').querySelector('[data-age-total]');
   if (t) t.textContent = n + '명';
+  const sb = $('ageList').querySelector('[data-age-sub]');
+  if (sb) sb.textContent = attendSum(state.age.groups) + '명';
 }
 function renderAge() {
   const want = defaultAgeBase(state.year);
@@ -1764,14 +1770,15 @@ function renderAge() {
     : (state.age.groups.length ? '' : `${state.year}년 명단이 아직 없습니다. <b>[교인 명부에서 가져오기]</b>를 누르면 생년월일로 연령대를 나눕니다.`);
   ageNote = '';
   if (!state.age.groups.length) { $('ageList').innerHTML = ''; $('ageTotal').innerHTML = ''; return; }
+  const lastBand = state.age.groups.reduce((k, g, i) => (isAgeBandRow(g) ? i : k), -1);
   $('ageList').innerHTML = `<div class="age-row head"><div>연령대</div><div>인원</div><div>명단</div></div>` +
     state.age.groups.map((g, i) => `
     <div class="age-row${g.label === AGE_NODATA ? ' nodata' : ''}">
-      <div class="al">${esc(g.label)}</div>
+      <div class="al">${esc(ageLabel(g.label))}</div>
       <div class="ac" data-count="age.groups.${i}.names">${countNames(g.names)}명</div>
       <div><textarea rows="1" data-k="age.groups.${i}.names" data-names placeholder="(없음)">${esc(g.names)}</textarea></div>
-    </div>`).join('') +
-    `<div class="age-row total"><div class="al">합계</div><div class="ac" data-age-total></div><div></div></div>`;
+    </div>` + (i === lastBand ? `<div class="age-row sub"><div class="al">출석 교인 합계</div><div class="ac" data-age-sub></div><div></div></div>` : '')).join('') +
+    `<div class="age-row total"><div class="al">총 인원 합계</div><div class="ac" data-age-total></div><div></div></div>`;
   updateAgeTotal();
   autoGrowAll($('ageList'));
 }
@@ -1805,8 +1812,7 @@ function renderAgeDoc() {
       ${toggleBar}
       <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
       <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
-      ageBandShade(gs).map(([g, alt]) => `<tr${alt ? ' class="alt"' : ''}><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
-      `<tr class="tot"><td class="l">합계</td><td class="c">${totalAll}</td><td></td></tr></tbody></table>`;
+      ageDocBody(gs) + `</tbody></table>`;
   } else if (!gg.length) {
     $('ageSheet').innerHTML = `<h1>${state.year}년 연령별 명단 (남녀 구분)</h1>${toggleBar}
       <div class="empty">${state.year}년 남녀 구분 명단이 저장되어 있지 않습니다.<br>'연령별 명단' 탭에서 <b>[교인 명부에서 가져오기]</b>를 누른 뒤 [저장]해 주세요.</div>`;
@@ -1816,15 +1822,31 @@ function renderAgeDoc() {
       ${toggleBar}
       <table class="adoc"><colgroup><col style="width:13%"><col style="width:8%"><col></colgroup>
       <thead><tr><th>연령대</th><th>인원</th><th>명단</th></tr></thead><tbody>` +
-      ageBandShade(gg).map(([g, alt]) => `<tr${alt ? ' class="alt"' : ''}><td class="l">${esc(g.label)}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`).join('') +
-      `<tr class="tot"><td class="l">합계</td><td class="c">${totalGender}</td><td></td></tr></tbody></table>`;
+      ageDocBody(gg) + `</tbody></table>`;
   }
 }
-// 같은 연령대(예: 85-89남·85-89여)는 한 묶음 — 묶음마다 흰색/연한 파랑을 번갈아 (90세 이상=흰색, 85-89=파랑, 80-84=흰색 …)
+// 저장된 예전 이름(85-89남)도 '85-89 남'으로 보이게
+function ageLabel(l) { return String(l).replace(/^(\d+-\d+)\s*([남여])$/, '$1 $2'); }
+const AGE_BAND_SET = new Set(AGE_BANDS.map((b) => b[0]));
+function isAgeBandRow(g) { return AGE_BAND_SET.has(ageLabel(g.label).replace(/\s[남여]$/, '')); }
+// 출석 교인 합계 = 90세 이상 ~ 20-29 (환우·장기 결석·20세 미만·자료없음 제외)
+function attendSum(list) { return list.filter(isAgeBandRow).reduce((n, g) => n + countNames(g.names), 0); }
+// 표 본문: 연령대 줄 → (마지막 연령대 줄 다음) 출석 교인 합계 → 나머지 줄 → 총 인원 합계
+function ageDocBody(list) {
+  const last = list.reduce((k, g, i) => (isAgeBandRow(g) ? i : k), -1);
+  let html = '';
+  ageBandShade(list).forEach(([g, alt], i) => {
+    html += `<tr${alt ? ' class="alt"' : ''}><td class="l">${esc(ageLabel(g.label))}</td><td class="c">${countNames(g.names)}</td><td class="n">${esc(g.names)}</td></tr>`;
+    if (i === last) html += `<tr class="sub"><td class="l">출석 교인 합계</td><td class="c">${attendSum(list)}</td><td></td></tr>`;
+  });
+  const total = list.reduce((n, g) => n + countNames(g.names), 0);
+  return html + `<tr class="tot"><td class="l">총 인원 합계</td><td class="c">${total}</td><td></td></tr>`;
+}
+// 같은 연령대(예: 85-89 남·85-89 여)는 한 묶음 — 묶음마다 흰색/연한 파랑을 번갈아 (90세 이상=흰색, 85-89=파랑, 80-84=흰색 …)
 function ageBandShade(list) {
   let k = -1, prev = null;
   return list.map((g) => {
-    const band = String(g.label).replace(/[남여]$/, '');
+    const band = ageLabel(g.label).replace(/\s[남여]$/, '');
     if (band !== prev) { k++; prev = band; }
     return [g, k % 2 === 1];
   });
