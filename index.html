@@ -302,7 +302,7 @@
   table.adoc td.n { line-height: 1.6; }
   table.adoc tr { break-inside: avoid; }
   table.adoc tr.alt td { background: #e8f2fc; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  table.adoc tr.sub td, .age-row.sub .al, .age-row.sub .ac { color: #1b5e20; }
+  table.adoc tr.sub td, .age-row.sub .al, .age-row.sub .ac { color: #1fa83a; }
   table.adoc tr.sub td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   table.adoc tr.tot td, .age-row.total .al, .age-row.total .ac { color: #1a56c4; }
   table.adoc tr.tot td { font-weight: 700; background: #f3f3f3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -1613,7 +1613,12 @@ function statusFromWeekly(payload) {
     if (nm.includes('/')) {
       const [h, w] = nm.split('/').map((x) => x.trim());
       if (h && isTag(nam)) out.push({ name: h, tag: nam });
-      if (w && isTag(yeo)) out.push({ name: w, tag: yeo });
+      if (w && isTag(yeo)) {
+        // 아내 이름이 외자·두 자(이름만 적힌 경우)이면 남편 성을 붙여 성명으로 (예: 김철수/영희 → 김영희)
+        const surname = /^[가-힣]{2,}$/.test(h) ? h[0] : '';
+        if (surname && /^[가-힣]{1,2}$/.test(w) && w[0] !== surname) out.push({ name: surname + w, tag: yeo, alt: w });
+        else out.push({ name: w, tag: yeo });
+      }
     } else {
       const v = m.gender === 'nam' ? nam : m.gender === 'yeo' ? yeo : (isTag(nam) ? nam : yeo);
       if (isTag(v)) out.push({ name: nm, tag: v });
@@ -1649,7 +1654,12 @@ function buildAgeGroups(members, base, status) {
   AGE_GENDER_BANDS.forEach(([label]) => (gbuckets[label] = []));
   // 출석현황 표시: 이름 → 남은 표시 목록 (같은 이름이 여럿이면 하나씩 씀)
   const pending = {};
-  (status || []).forEach((st) => { (pending[st.name] = pending[st.name] || []).push(st.tag); });
+  // 남편 성을 붙인 이름이 교인 명부에 없고, 원래 두 자 이름(성+외자)이 명부에 있으면 원래 이름을 씀
+  const regNames = new Set(members.filter((m) => !isTerminated(m)).map((m) => String(m.name || '').trim()));
+  (status || []).forEach((st) => {
+    const nm = st.alt && !regNames.has(st.name) && regNames.has(st.alt) ? st.alt : st.name;
+    (pending[nm] = pending[nm] || []).push(st.tag);
+  });
   const special = (name, tag) => {
     if (SICK_TAGS.includes(tag)) { buckets[AGE_SICK].push(name); gextra[AGE_SICK].push(name); return AGE_SICK; }
     const n = `${name}(${tag})`; buckets[AGE_AWAY].push(n); gextra[AGE_AWAY].push(n); return AGE_AWAY;
