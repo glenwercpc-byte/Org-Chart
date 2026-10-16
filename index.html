@@ -430,7 +430,7 @@
     <div class="org-toolbar">
       <div>
         <h2>연령별 명단</h2>
-        <p>교인 명부의 생년월일로 연령대를 나눕니다(해지 교인 제외, 만 나이). 가져온 뒤 명단을 직접 고칠 수 있고, 연도별로 저장됩니다.</p>
+        <p>교인 명부의 생년월일로 연령대를 나눕니다(해지 교인 제외, 만 나이). 주일예배 출석현황의 환우·장기 결석(타교·타주·한국·귀국·장결) 교인은 따로 모읍니다. 가져온 뒤 명단을 직접 고칠 수 있고, 연도별로 저장됩니다.</p>
       </div>
       <div class="org-actions">
         <button class="btn primary" type="button" id="ageImportBtn">교인 명부에서 가져오기</button>
@@ -500,6 +500,8 @@
    ================================================================ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxZ1UYOx38_zxAKRetkv52xkTR1kllmVj0Fpc8TPOrq5QSdSduII4Efx1Fll1eDhfw_/exec';
 // 교인 명부(member-register) 앱의 Apps Script 주소 — 생년월일·해지 정보를 읽어 옵니다
+// 주일예배 출석현황(Weekly-Status) 앱의 Apps Script 주소 — 환우·타교·타주·한국·귀국·장결 표시를 읽어 옵니다
+const WEEKLY_API = 'https://script.google.com/macros/s/AKfycbwB8hMRMECTFp3mYzAAPw0mAuAbZ6a-TDzksiWgvXr02ri6I8zioIHMzmsupML9I2o_aw/exec';
 const MEMBER_API = 'https://script.google.com/macros/s/AKfycbx-N1Y8NaNVu1jiWMxIKQ7xoAQu_65_BKBrT9kZcgiBEN2vsJ52PBTVSVnzkNKQBN0Azw/exec';
 
 const DEMO = {
@@ -1500,6 +1502,8 @@ function renderHistDoc() {
 const AGE_BANDS = [['90세 이상', 90, 999], ['85-89', 85, 89], ['80-84', 80, 84], ['75-79', 75, 79], ['70-74', 70, 74],
   ['65-69', 65, 69], ['60-64', 60, 64], ['50-59', 50, 59], ['40-49', 40, 49], ['30-39', 30, 39], ['20-29', 20, 29]];
 const AGE_YOUNG = '20세 미만', AGE_NODATA = '자료없음';
+const AGE_SICK = '환우', AGE_AWAY = '장기 결석';
+const SICK_TAGS = ['환우'], AWAY_TAGS = ['타교', '타주', '한국', '귀국', '장결'];
 const DEMO_MEMBERS = [
   ['교인가', '1931-05-02'], ['교인나', '1934-11-20'], ['교인다', '1938-02-14'], ['교인라', '1940-07-07'], ['교인마', '1944-03-30'],
   ['교인바', '1946-12-01'], ['교인사', '1950-08-15'], ['교인아', '1953-01-09'], ['교인자', '1957-06-21'], ['교인차', '1961-10-03'],
@@ -1585,40 +1589,96 @@ function normGender(v) {
   if (/^(여|여자|여성|f|female)$/.test(s)) return '여';
   return '';
 }
-function buildAgeGroups(members, base) {
-  const buckets = {}, all = AGE_BANDS.map((b) => b[0]).concat([AGE_YOUNG, AGE_NODATA]);
+// 출석현황 앱의 현재 주 자료 → [{ name, tag }] (부부는 '남편/아내' 한 줄 → 각각 nam/yeo 칸)
+function statusFromWeekly(payload) {
+  const out = [], isTag = (v) => SICK_TAGS.includes(v) || AWAY_TAGS.includes(v);
+  ((payload && payload.members) || []).forEach((m) => {
+    const nm = String(m.name || '').trim();
+    if (!nm) return;
+    const nam = String(m.nam || '').trim(), yeo = String(m.yeo || '').trim();
+    if (nm.includes('/')) {
+      const [h, w] = nm.split('/').map((x) => x.trim());
+      if (h && isTag(nam)) out.push({ name: h, tag: nam });
+      if (w && isTag(yeo)) out.push({ name: w, tag: yeo });
+    } else {
+      const v = m.gender === 'nam' ? nam : m.gender === 'yeo' ? yeo : (isTag(nam) ? nam : yeo);
+      if (isTag(v)) out.push({ name: nm, tag: v });
+    }
+  });
+  return out;
+}
+function jsonpRaw(url, ms = 20000) {
+  return new Promise((resolve, reject) => {
+    const cb = '__wscb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    const s = document.createElement('script');
+    const timer = setTimeout(() => { cleanup(); reject(new Error('시간 초과')); }, ms);
+    function cleanup() { clearTimeout(timer); delete window[cb]; s.remove(); }
+    window[cb] = (data) => { cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error('연결 실패')); };
+    s.src = url + (url.includes('?') ? '&' : '?') + 'callback=' + cb + '&_=' + Date.now();
+    document.body.appendChild(s);
+  });
+}
+async function apiWeeklyStatus() {
+  if (!API_URL) return clone(DEMO_STATUS);
+  const d = await jsonpRaw(WEEKLY_API + '?action=get');
+  if (!d || d.error) throw new Error((d && d.error) || '출석현황 자료 없음');
+  return statusFromWeekly(d);
+}
+const DEMO_STATUS = [{ name: '교인나', tag: '환우' }, { name: '교인카', tag: '타주' }, { name: '교인파', tag: '한국' }];
+
+function buildAgeGroups(members, base, status) {
+  const buckets = {}, all = AGE_BANDS.map((b) => b[0]).concat([AGE_SICK, AGE_AWAY, AGE_YOUNG, AGE_NODATA]);
   all.forEach((l) => (buckets[l] = []));
-  // gender buckets: key = bandLabel + '|' + gender ('남'|'여'|'통합')
-  const gbuckets = {}, gextra = { [AGE_YOUNG]: [], [AGE_NODATA]: [], [AGE_NOGENDER]: [] };
+  const gbuckets = {}, gextra = { [AGE_SICK]: [], [AGE_AWAY]: [], [AGE_YOUNG]: [], [AGE_NODATA]: [], [AGE_NOGENDER]: [] };
   const genderCount = { 남: 0, 여: 0, none: 0, field: false };
   AGE_GENDER_BANDS.forEach(([label]) => (gbuckets[label] = []));
-  let active = 0, excluded = 0;
+  // 출석현황 표시: 이름 → 남은 표시 목록 (같은 이름이 여럿이면 하나씩 씀)
+  const pending = {};
+  (status || []).forEach((st) => { (pending[st.name] = pending[st.name] || []).push(st.tag); });
+  const special = (name, tag) => {
+    if (SICK_TAGS.includes(tag)) { buckets[AGE_SICK].push(name); gextra[AGE_SICK].push(name); return AGE_SICK; }
+    const n = `${name}(${tag})`; buckets[AGE_AWAY].push(n); gextra[AGE_AWAY].push(n); return AGE_AWAY;
+  };
+  let active = 0, excluded = 0, sick = 0, away = 0;
   members.forEach((m) => {
     const name = String(m.name || '').trim();
     if (!name) return;
-    if (isTerminated(m)) { excluded++; return; }
+    if (isTerminated(m)) { excluded++; if (pending[name]) pending[name].shift(); return; }
     active++;
+    const gender = normGender(m.gender);
+    if (gender) genderCount[gender]++; else genderCount.none++;
+    if ('gender' in m) genderCount.field = true;
+    // 환우 / 장기 결석(타교·타주·한국·귀국·장결)은 연령대에서 빼서 해당 칸으로
+    if (pending[name] && pending[name].length) {
+      special(name, pending[name].shift()) === AGE_SICK ? sick++ : away++;
+      return;
+    }
     const b = parseBirth(m.birthDate);
     const a = b ? ageAt(b, base) : NaN;
     const band = b && a >= 0 && a < 130 ? bandOf(a) : AGE_NODATA;
     buckets[band].push(name);
     // 남녀 구분: 남/여 로 나누는 연령대인데 성별이 비어 있으면 '성별 미입력'으로 모음 (빠지는 사람 없게)
-    const gender = normGender(m.gender);
-    if (gender) genderCount[gender]++; else genderCount.none++;
-    if ('gender' in m) genderCount.field = true;
     const rows = AGE_GENDER_BANDS.filter(([, bandLabel]) => bandLabel === band);
     if (!rows.length) gextra[band].push(name);                       // 20세 미만 · 자료없음
     else if (rows.some(([, , g]) => g === null)) gbuckets[rows[0][0]].push(name);
     else if (gender) gbuckets[band + gender].push(name);
     else gextra[AGE_NOGENDER].push(`${name}(${band})`);
   });
+  // 출석현황에는 있는데 교인 명부(해지 제외)에서 찾지 못한 이름 — 그래도 칸에는 넣고 따로 알려 줌
+  const unmatched = [];
+  Object.keys(pending).forEach((name) => pending[name].forEach((tag) => {
+    unmatched.push(`${name}(${tag})`);
+    special(name, tag) === AGE_SICK ? sick++ : away++;
+  }));
   const sort = (arr) => arr.sort((x, y) => x.localeCompare(y, 'ko'));
   const groups = all.filter((l) => l !== AGE_YOUNG || buckets[l].length)
     .map((l) => ({ label: l, names: sort(buckets[l]).join(', ') }));
   const genderGroups = AGE_GENDER_BANDS.map(([label]) => ({ label, names: sort(gbuckets[label]).join(', ') }))
-    .concat([AGE_YOUNG, AGE_NODATA, AGE_NOGENDER].filter((l) => l === AGE_NODATA || gextra[l].length)
+    .concat([AGE_SICK, AGE_AWAY, AGE_YOUNG, AGE_NODATA, AGE_NOGENDER]
+      .filter((l) => l === AGE_SICK || l === AGE_AWAY || l === AGE_NODATA || gextra[l].length)
       .map((label) => ({ label, names: sort(gextra[label]).join(', ') })));
-  return { groups, genderGroups, active, excluded, genderCount };
+  return { groups, genderGroups, active: active + unmatched.length, registered: active + excluded, excluded, genderCount, sick, away, unmatched };
 }
 let ageNote = '';
 function fmtKDate(d) { return String(d).replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_, y, mo, dd) => `${y}년 ${+mo}월 ${+dd}일`); }
@@ -1633,6 +1693,7 @@ function openImportModal() {
       대상 연도: <b>${state.year}년</b><br>
       기준일: <b>${fmtKDate(base)}</b> (만 나이)<br>
       해지 교인(해지일·해지 사유 입력)은 <b>제외</b><br>
+      출석현황의 <b>환우</b>, <b>장기 결석</b>(타교·타주·한국·귀국·장결)은 연령대에서 빼서 따로 넣음<br>
       전체 명단과 <b>남녀 구분 명단</b>을 함께 만듭니다
     </div>
     ${has ? `<div class="imp-warn">⚠ ${state.year}년 명단이 이미 있습니다. 가져오면 직접 고친 내용까지 새 명단으로 바뀝니다.</div>` : ''}`;
@@ -1650,21 +1711,26 @@ async function runImport() {
   impActions('');
   try {
     const members = await apiMembers();
-    const r = buildAgeGroups(members, base);
+    let status = null, statusErr = '';
+    try { status = await apiWeeklyStatus(); } catch (e) { statusErr = e.message; }
+    const r = buildAgeGroups(members, base, status);
     state.age = { base, groups: r.groups, genderGroups: r.genderGroups };
     const gc = r.genderCount;
-    ageNote = `교인 명부 ${r.active + r.excluded}명 중 해지 ${r.excluded}명을 빼고 ${r.active}명을 나눴습니다. ` +
+    ageNote = `교인 명부 ${r.registered}명 중 해지 ${r.excluded}명을 빼고 ${r.active}명을 나눴습니다${r.unmatched.length ? `(출석현황에만 있는 ${r.unmatched.length}명 포함)` : ''}. ` +
       (gc.field ? `성별: 남 ${gc.남}명 · 여 ${gc.여}명 · 미입력 ${gc.none}명.`
                 : `⚠ 교인 명부 서버가 성별(gender)을 보내지 않아 남녀 구분 명단을 나눌 수 없습니다.`);
     setDirty(true); renderAge();
     $('impBody').innerHTML = `
       <div class="imp-ok">✓ ${state.year}년 연령별 명단을 만들었습니다.</div>
       <div class="imp-list">
-        교인 명부: <b>${r.active + r.excluded}</b>명<br>
+        교인 명부: <b>${r.registered}</b>명<br>
         해지 제외: <b>${r.excluded}</b>명<br>
         연령별 명단: <b>총 ${r.active}명</b><br>
+        ${status ? `출석현황에서 환우 <b>${r.sick}</b>명 · 장기 결석 <b>${r.away}</b>명을 연령대에서 빼서 따로 넣었습니다<br>` : ''}
         ${gc.field ? `성별: 남 <b>${gc.남}</b>명 · 여 <b>${gc.여}</b>명 · 미입력 <b>${gc.none}</b>명` : '⚠ 교인 명부에 성별 자료가 없어 남녀 구분을 할 수 없습니다.'}
       </div>
+      ${statusErr ? `<div class="imp-warn">⚠ 주일예배 출석현황에 연결하지 못해 환우·장기 결석 칸을 채우지 못했습니다 (${esc(statusErr)}). 잠시 후 다시 가져오거나 칸에 직접 입력하세요.</div>` : ''}
+      ${r.unmatched.length ? `<div class="imp-warn">출석현황에는 있으나 교인 명부에서 찾지 못한 이름(칸에는 넣었습니다): ${esc(r.unmatched.join(', '))}</div>` : ''}
       ${gc.field && gc.none ? `<div class="imp-warn">성별 미입력 교인은 남녀 구분 명단의 '성별 미입력' 줄에 모입니다.</div>` : ''}
       <div style="font-size:13px;color:var(--muted)">위쪽 <b>[저장]</b>을 눌러야 시트에 기록됩니다.</div>`;
     impActions(`<button class="btn primary" type="button" id="impClose" data-close="importModal">확인</button>`);
